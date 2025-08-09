@@ -1,24 +1,63 @@
 CFLAGS = -Wall
-CXXFLAGS = -std=c++11 -I./inc
+
+GPP = g++
 
 MISC = ./misc
 SRC = ./src
-INC = ./inc
 TEST = ./test
+BUILD = build
+ASM_TARGET = assembler
 
-parser: $(MISC)/lexer.c $(MISC)/parser.tab.c
-	gcc -c $(MISC)/parser.tab.c -o $(MISC)/parser.tab.o
-	gcc -c $(MISC)/lexer.c -o $(MISC)/lexer.o
-	g++ -c $(SRC)/assembler.cpp -o $(SRC)/assembler.o $(CXXFLAGS)
-	g++ -o parser $(MISC)/parser.tab.o $(MISC)/lexer.o $(SRC)/assembler.o -lfl
+asm: $(ASM_TARGET)
 
-$(MISC)/lexer.c: $(MISC)/lexer.l
+SRC = ./src
+SRCS = $(wildcard $(SRC)/*.cpp)
+OBJS = $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRCS))
+
+COMMON = ./common
+COMMON_SRCS = $(wildcard $(COMMON)/*.cpp)
+COMMON_HEADERS = $(wildcard $(COMMON)/*.hpp)
+COMMON_OBJS = $(patsubst $(COMMON)/%.cpp, $(BUILD)/%.o, $(COMMON_SRCS))
+
+INSTRUCTIONS = ./common/instructions
+INSTRUCTION_SRCS = $(wildcard $(INSTRUCTIONS)/*.cpp)
+INSTRUCTION_HEADERS = $(wildcard $(INSTRUCTIONS)/*.hpp)
+INSTRUCTION_OBJS = $(patsubst $(INSTRUCTIONS)/%.cpp, $(BUILD)/%.o, $(INSTRUCTION_SRCS))
+
+ALL_OBJ_FILES = $(LEXER_OBJ) $(PARSER_OBJ) $(INSTRUCTION_OBJS) $(COMMON_OBJS) $(OBJS)
+
+LEXER_OBJ = $(BUILD)/lexer.yy.o
+PARSER_OBJ = $(BUILD)/parser.tab.o
+
+$(BUILD)/%.o: $(SRC)/%.cpp | $(BUILD)
+	$(GPP) -c $< -Icommon -o $@
+
+$(BUILD)/%.o: $(COMMON)/%.cpp | $(BUILD)
+	$(GPP) -c $< -Icommon -o $@
+
+$(BUILD)/%.o: $(INSTRUCTIONS)/%.cpp | $(BUILD)
+	$(GPP) -c $< -Icommon -o $@
+
+
+$(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(MISC)/parser.y | $(BUILD)
+	bison -d $< -o $(BUILD)/parser.tab.c
+
+$(BUILD)/lexer.yy.c: $(MISC)/lexer.l $(BUILD)/parser.tab.h | $(BUILD)
 	flex -o $@ $<
 
-$(MISC)/parser.tab.c $(MISC)/parser.tab.h: $(MISC)/parser.y
-	bison -d -t -o $(MISC)/parser.tab.c $<
+$(BUILD)/parser.tab.o: $(BUILD)/parser.tab.c
+	$(GPP) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD)/lexer.yy.o: $(BUILD)/lexer.yy.c
+	$(GPP) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD):
+	mkdir -p $@
+
+$(ASM_TARGET): $(ALL_OBJ_FILES)
+	$(GPP) -Wall -g -Icommon -o $@ $^
 
 clean:
-	rm -f $(MISC)/*.tab.c $(MISC)/*.tab.h $(MISC)/lexer.c $(MISC)/*.o $(SRC)/*.o parser $(TEST)/*txt
+	rm -rf $(BUILD)
 
-.PHONY: all clean
+.PHONY: all clean asm
