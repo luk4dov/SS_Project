@@ -11,6 +11,7 @@
     extern void selectInstruction(const char*, short, short, uint32, const char*, short);
     extern void selectDirective(const char*, const char*, uint32);
     extern void labelDefinition(const char*);
+
 %}
 
 %union {

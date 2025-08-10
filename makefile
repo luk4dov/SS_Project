@@ -1,4 +1,4 @@
-CFLAGS = -Wall
+CXXFLAGS = -Wall -g
 
 GPP = g++
 
@@ -36,7 +36,7 @@ $(BUILD)/%.o: $(COMMON)/%.cpp | $(BUILD)
 	$(GPP) -c $< -Icommon -o $@
 
 $(BUILD)/%.o: $(INSTRUCTIONS)/%.cpp | $(BUILD)
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 
 
 $(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(MISC)/parser.y | $(BUILD)
@@ -55,7 +55,7 @@ $(BUILD):
 	mkdir -p $@
 
 $(ASM_TARGET): $(ALL_OBJ_FILES)
-	$(GPP) -Wall -g -Icommon -o $@ $^
+	$(GPP) $(CXXFLAGS) -Icommon -o $@ $^
 
 clean:
 	rm -rf $(BUILD)

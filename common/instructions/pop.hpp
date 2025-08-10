@@ -14,8 +14,8 @@ public:
 
 private:
     short rd;
-    short type;
     Section* section;
+    short type;
 };
 
 #endif

@@ -19,15 +19,12 @@ int StoreInstruction::write_section_data() {
             return 12;
         }
         case 1: { // ST reg, sym -> mem[sym] <= reg
-            Symbol* symbol = nullptr;
             if(symbolTable.find(label) == symbolTable.end()) {
-                symbol = new Symbol(label, 0);
-            }
-            if(symbol) { // if symbol didn't exist in symbol table, insert it; add relocation
-                symbolTable[label] = symbol;
+                symbolTable[label] = new Symbol(section->name, 0);
             }
             else if(symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < 0x7ff) { // can be pc relative
                 uint32 binary = serialize(ST, 0x0, 15, 0, rs, symbolTable[label]->offset - section->data.size()); // mem[pc + o - offset] <= rs
+                write_binary(section, binary);
                 return 4;
             }
             // relocation must be done

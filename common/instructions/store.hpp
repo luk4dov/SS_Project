@@ -17,10 +17,9 @@ private:
     short rd;
     uint32 immediate;
     std::string label;
-    short type;
     Section* section;
-    std::unordered_map<std::string, Symbol*> symbolTable;
-    
+    std::unordered_map<std::string, Symbol*>& symbolTable;
+    short type;
 };
 
 #endif

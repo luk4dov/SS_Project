@@ -1,7 +1,7 @@
 #include "beq.hpp"
 #include "jmp.hpp"
 
-BeqInstruction::BeqInstruction(short r1, short r2, uint32 immediate, std::string label, Section* section,  std::unordered_map<std::string, Symbol*> symbolTable, short type, JMPCondition cond) :
+BeqInstruction::BeqInstruction(short r1, short r2, uint32 immediate, std::string label, Section* section,  std::unordered_map<std::string, Symbol*>& symbolTable, short type, JMPCondition cond) :
                                 r1(r1), r2(r2), immediate(immediate), label(label), section(section), symbolTable(symbolTable), type(type), cond(cond)  {}
 
 Instruction* BeqInstruction::createInstruction(short reg1, short reg2, uint32 immediate, std::string label, Section* section, std::unordered_map<std::string, Symbol*>& symbolTable, short type) {

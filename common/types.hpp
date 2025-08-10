@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <iostream>
+#include <stdint.h>
 
 typedef unsigned int uint32;
 

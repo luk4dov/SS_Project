@@ -27,7 +27,7 @@
 #include "instructions/csrwr.hpp"
 
 #include <iostream>
-#include <iomanip>
+// #include <iomanip>
 
 using InstructionFactory = Instruction* (*) (short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
 
@@ -74,8 +74,8 @@ void Instruction::write_binary(Section* section, uint32 binary_data) {
     section->data.push_back((binary_data >> 16) & 0xff);
     section->data.push_back((binary_data >> 8) & 0xff);
     section->data.push_back(binary_data & 0xff);
-    std::cout << std::hex << std::setw(2) << (binary_data >> 24) << " "
-                          << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
-                          << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
-                          << std::setw(2) << (binary_data & 0xff) << '\n';
+    // std::cout << std::hex << std::setw(2) << (binary_data >> 24) << " "
+    //                       << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
+    //                       << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
+    //                       << std::setw(2) << (binary_data & 0xff) << '\n';
 }
