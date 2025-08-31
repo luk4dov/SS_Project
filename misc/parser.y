@@ -58,7 +58,7 @@ directive:
 |   WORD word_identifier_list
 |   SKIP NUMBER { selectDirective("skip", "", $2); }
 |   ASCII string { selectDirective("ascii", $2, 0); }
-|   END { selectDirective("end", "", 0); return 0; };
+|   END { selectDirective("end", "", 0); };
 
 
 extern_identifier_list:

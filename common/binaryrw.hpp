@@ -12,6 +12,10 @@ public:
 
     void read(std::string);
     void write(std::string);
+
+    void writeHex(std::string);
+    void readHex(std::string);
+
 private:
     std::fstream file;
 
@@ -20,11 +24,11 @@ private:
 
     uint32 readUint32();
     std::string readString();
-    char readByte();
+    uchar readByte();
 
     void writeUint32(uint32);
     void writeString(std::string);
-    void writeByte(char);
+    void writeByte(uchar);
 };
 
 #endif

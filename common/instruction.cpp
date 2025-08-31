@@ -66,7 +66,12 @@ Instruction* Instruction::pickInstruction(std::string name, short r1, short r2, 
 }
 
 uint32 Instruction::serialize(OperationCode op, short mn, short ra, short rb, short rc, short disp) {
-    return (((op & 0xf) << 28) | ((mn & 0xf) << 24) | ((ra & 0xf) << 20) | ((rb & 0xf) << 16) | ((rc & 0xf) << 12) | (disp & 0xfff));
+    return (((op & 0xf) << 28) | 
+            ((mn & 0xf) << 24) | 
+            ((ra & 0xf) << 20) | 
+            ((rb & 0xf) << 16) | 
+            ((rc & 0xf) << 12) | 
+            (disp & 0xfff));
 }
 
 void Instruction::write_binary(Section* section, uint32 binary_data) {

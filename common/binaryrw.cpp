@@ -26,13 +26,15 @@ void BinaryRW::read(std::string fileName) {
             std::string symbol = readString();
             uint32 vectorSize = readUint32();
             std::vector<uint32> offset;
+            
             for(int k = 0; k < vectorSize; k++) {
                 offset.push_back(readUint32());
             }
             relocTable[symbol] = offset;
         }
+        
         uint32 dataSize = readUint32();
-        std::vector<char> sectionData;
+        std::vector<uchar> sectionData;
 
         for(uint32 j = 0; j < dataSize; j ++) {
             sectionData.push_back(readByte());
@@ -55,8 +57,8 @@ void BinaryRW::write(std::string fileName) {
         writeString(symbolName);
         writeString(symbol->section);
         writeUint32(symbol->offset);
-        writeByte(static_cast<char>(symbol->global));
-        writeByte(static_cast<char>(symbol->defined));
+        writeByte(static_cast<uchar>(symbol->global));
+        writeByte(static_cast<uchar>(symbol->defined));
     }
 
     writeUint32(sectionTable.size());
@@ -74,43 +76,42 @@ void BinaryRW::write(std::string fileName) {
 
         writeUint32(section->data.size());
         
-        for(uint32 byte : section->data) {
-            // std::cout << "writing " << std::hex << std::setw(2) << (byte&0xff) << '\n';
-            writeByte(byte&0xff);
+        for(uchar byte : section->data) {
+            writeByte(byte);
         }
     }
     file.close();
 }
 
 void BinaryRW::writeUint32(uint32 num) {
-    std::vector<uint8_t> bytes(4,0);
-    bytes[3] = num & 0xff;
-    bytes[2] = (num >> 8) & 0xff;
-    bytes[1] = (num >> 16) & 0xff;
-    bytes[0] = (num >> 24) & 0xff;
+    std::vector<uchar> bytes(4,0);
+    bytes[0] = num & 0xff;
+    bytes[1] = (num >> 8) & 0xff;
+    bytes[2] = (num >> 16) & 0xff;
+    bytes[3] = (num >> 24) & 0xff;
     file.write(reinterpret_cast<const char*>(bytes.data()), 4);
 }
 
 void BinaryRW::writeString(std::string s) {
     uint32 size = s.size(); 
     writeUint32(size+1); // write the number of letters with '\0' sign
-    std::vector<uint8_t> letters(size+1, 0);
+    std::vector<uchar> letters(size+1, 0);
     std::copy(s.begin(), s.end(), letters.begin());
     letters[size] = static_cast<uint8_t>('\0');
     file.write(reinterpret_cast<const char*>(letters.data()), letters.size());
 }
 
-void BinaryRW::writeByte(char data) {
+void BinaryRW::writeByte(uchar data) {
     file.write(reinterpret_cast<char*>(&data), 1);
 }
 
 uint32 BinaryRW::readUint32() {
-    uint8_t bytes[4];
+    uchar bytes[4];
     file.read(reinterpret_cast<char*>(bytes), 4);
-    return (uint32(bytes[0]) << 24) |
-           (uint32(bytes[1]) << 16) |
-           (uint32(bytes[2]) << 8)  |
-            uint32(bytes[3]);
+    return (uint32(bytes[3]) << 24) |
+           (uint32(bytes[2]) << 16) |
+           (uint32(bytes[1]) << 8)  |
+            uint32(bytes[0]);
 }
 
 std::string BinaryRW::readString() {
@@ -120,9 +121,42 @@ std::string BinaryRW::readString() {
     return std::string(characters.data());
 }
 
-char BinaryRW::readByte() {
-    char byte = 0;
+uchar BinaryRW::readByte() {
+    uchar byte = 0;
     file.read(reinterpret_cast<char*>(&byte), 1);
-    // std::cout << "reading " << std::hex << std::setw(2) << (byte&0xff) << '\n';
     return byte;
+}
+
+
+void BinaryRW::writeHex(std::string fileName) {
+    file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
+    writeUint32(sectionTable.size());
+
+    for(auto [sectionName, section] : sectionTable) {
+        writeUint32(section->addr);
+        writeUint32(section->data.size());
+        for(uchar data : section->data) {
+            writeByte(data);
+        }
+    }
+
+    file.close();
+    
+    std::fstream file = std::fstream(fileName + ".txt", std::ios::out | std::ios::trunc);
+    for(auto [sectionName, section] : sectionTable) {
+        int addr = section->addr;
+
+        for(int i = 0; i < section->data.size(); i += 8) {
+            file << std::hex << std::setw(8) << std::setfill('0') << addr + i << ": ";
+            for(int j = 0; j < 8 && (i + j) < section->data.size(); ++j) {
+                file << std::hex << std::setw(2) << std::setfill('0') << (int)section->data[i + j] << " ";
+            }
+            file << '\n';
+        }
+    }
+    file.close();
+}
+
+void BinaryRW::readHex(std::string fileName) {
+
 }

@@ -1,39 +1,35 @@
-#include <iostream>
-#include <string.h>
-
-#include "../common/types.hpp"
-#include "../common/instruction.hpp"
-#include "../common/binaryrw.hpp"
+#include "assembler.hpp"
 
 extern int yyparse();
 extern int yylineno;
 extern FILE* yyin;
 
-static std::string section;
-static std::unordered_map<std::string, Section*> sectionTable;
-static std::unordered_map<std::string, Symbol*> symbolTable;
+Assembler::~Assembler() {
+    for(auto& [sectionName, section] : sectionTable) {
+        delete section;
+    }
+    for(auto& [symbolName, symbol] : symbolTable) {
+        delete symbol;
+    }
+}
 
-// for every local symbol, we must exclude it from symbolTable, but before that every
-// relocation for that symbol must be overwritten to be done from the section where that symbol is defined
-// while addend (offset from symbol's section) will be written into memory where that symbol must be resolved
 
-// linker's job will be, after joining sections from multiple files, to add symbol's section address to the address of relocation
-void removeLocalSymbols() {
+void Assembler::removeLocalSymbols() {
     std::vector<std::string> localSymbols;
-
-    for(auto& [symbolName, symbol] : symbolTable) { // check for every symbol
-        if(symbol->global) continue; // if symbol is global there is no need to do anything
-        if(!symbol->defined) { localSymbols.push_back(symbolName); std::cout << symbolName << " not defined!\n"; continue; } // error, local symbol that's not defined
-        // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address 
-        
+    for(auto& [symbolName, symbol] : symbolTable) {                                     // check for every symbol
+        if(symbol->global) continue;                                                    // if symbol is global there is no need to do anything
+        if(!symbol->defined) {                                                          // error, local symbol that's not defined
+            throw LocalSymbolNotDefined(symbolName, std::string(inputFile));
+        }
+        // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address         
         localSymbols.push_back(symbolName);
 
         for(auto& [sectionName, section] : sectionTable) {
-            for(uint32 offset : section->reloc_table[symbolName]) { // for every relocation of symbol in this section
+            for(uint32 offset : section->reloc_table[symbolName]) {                     // for every relocation of symbol in this section
                 Symbol* sym = symbolTable[symbolName];
 
-                section->reloc_table[sym->section].push_back(offset); // create new relocation but over symbol's section
-                section->data[offset] = (symbol->offset >> 24) & 0xff; // load symbol's offset from it's section to memory; little endian
+                section->reloc_table["." + sym->section].push_back(offset);             // create new relocation but over symbol's section
+                section->data[offset] = (symbol->offset >> 24) & 0xff;                  // load symbol's offset from it's section to memory; little endian
                 section->data[offset+1] = (symbol->offset >> 16) & 0xff;
                 section->data[offset+2] = (symbol->offset >> 8) & 0xff;
                 section->data[offset+3] = symbol->offset & 0xff;
@@ -46,36 +42,29 @@ void removeLocalSymbols() {
     }
 }
 
-
-void selectInstructionWrap(std::string name, short reg1, short reg2, uint32 immediate, std::string label, Section* section, std::unordered_map<std::string, Symbol*>& symbolTable, short type) {
-    Instruction* instruction = Instruction::instructions[name](reg1, reg2, immediate, label, section, symbolTable, type);
-
+void Assembler::selectInstruction(std::string name, short reg1, short reg2, uint32 immediate, std::string label, short type) {
+    Instruction* instruction = Instruction::instructions[name](reg1, reg2, immediate, label, sectionTable[section], symbolTable, type);
+    
     int ret = instruction->write_section_data();
     
     if (instruction) delete instruction;
 }
-void selectInstruction(const char* name, short reg1, short reg2, uint32 immediate, const char* label, short type) {
-    selectInstructionWrap(std::string(name), reg1, reg2, immediate, std::string(label), sectionTable[section], symbolTable, type);
-}
 
-void labelDefinition(const char* name) {
-    std::string symbol = std::string(name);
-    if (symbolTable.find(symbol) == symbolTable.end()) { // symbol not in table, insert it
-        
-        symbolTable[symbol] = new Symbol(section, sectionTable[section]->data.size(), false, true);
+void Assembler::labelDefinition(std::string symbolName) {
+    if (symbolTable.find(symbolName) == symbolTable.end()) { // symbol not in table, insert it
+        symbolTable[symbolName] = new Symbol(section, sectionTable[section]->data.size(), false, true);
         return;
     }
     // check if the symbol is defined in table
-    if(symbolTable[symbol]->defined) { std::cout << "redefinition of symbol:" << symbol << '\n'; return; }
-    symbolTable[symbol]->section = section;
-    symbolTable[symbol]->offset = sectionTable[section]->data.size();
-    symbolTable[symbol]->defined = true;
+    if(symbolTable[symbolName]->defined) { 
+        throw SymbolRedefinition(symbolName, std::string(inputFile), yylineno);
+    }
+    symbolTable[symbolName]->section = section;
+    symbolTable[symbolName]->offset = sectionTable[section]->data.size();
+    symbolTable[symbolName]->defined = true;
 }
 
-void selectDirective(const char* dir, const char* nm, uint32 immediate) {
-    std::string directive = std::string(dir);
-    std::string name = std::string(nm);
-
+void Assembler::selectDirective(std::string directive, std::string name, uint32 immediate) {
     if(directive == "global" || directive == "extern")  {
         // if it doesn't exist in symbolTable, insert it, anyways check the global flag
         if(symbolTable.find(name) == symbolTable.end()) {
@@ -87,7 +76,7 @@ void selectDirective(const char* dir, const char* nm, uint32 immediate) {
         // check if section exists in sectionTable, otherwise create new section
         if(sectionTable.find(name) == sectionTable.end()) {
             sectionTable[name] = new Section(0, 0, name);
-            // symbolTable[name] = new Symbol(section, 0, true, true);
+            symbolTable["." + name] = new Symbol(name, 0, true, true);
         }
         section = name; // change current section name
 
@@ -103,15 +92,15 @@ void selectDirective(const char* dir, const char* nm, uint32 immediate) {
                 symbolTable[name] = new Symbol("UND", 0, false, false);   
             }
             sectionTable[section]->reloc_table[name].push_back(sectionTable[section]->data.size());
-            sectionTable[section]->data.push_back(0x0);
-            sectionTable[section]->data.push_back(0x0);
-            sectionTable[section]->data.push_back(0x0);
-            sectionTable[section]->data.push_back(0x0);
+            sectionTable[section]->data.push_back(0x00);
+            sectionTable[section]->data.push_back(0x00);
+            sectionTable[section]->data.push_back(0x00);
+            sectionTable[section]->data.push_back(0x00);
         }
     
     } else if (directive == "skip") {
         for(int i = 0; i < immediate; ++i) { // 1 push_back(0) -> 00000000b
-            sectionTable[section]->data.push_back(0);
+            sectionTable[section]->data.push_back(0x00);
         }
 
     } else if (directive == "ascii") {
@@ -126,7 +115,7 @@ void selectDirective(const char* dir, const char* nm, uint32 immediate) {
     }
 }
 
-void printStat() {
+void Assembler::printStat() {
     std::cout << "Symbol table: symbol  |  section  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
         std::cout << symbolName << " | " << symbol->section << " | " << symbol->defined << " | " << symbol->global << '\n';
@@ -156,29 +145,24 @@ void printStat() {
     }
 }
 
-int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 4 || argc == 3) return -1;
-    
-    char* inputFile = argv[argc-1];
-    char* outputFile;
-    if(argc > 2) 
-        outputFile = argv[2];
-    else
-        outputFile = "./izlazni_fajl.o";
-
-    sectionTable = {};
-    symbolTable = {};
-    section="";
-    
+int Assembler::assemble() {
     yyin = fopen(inputFile, "r");
-    int ret = yyparse();
 
-    printStat();
+    try {
+        int ret = yyparse();
 
-    BinaryRW* rw = new BinaryRW(sectionTable, symbolTable);
-    rw->write(std::string(outputFile));
+        printStat();
 
-    return 0;
+        write();
+
+        return ret;
+    }
+    catch (LocalSymbolNotDefined e) { return -2; }
+    catch (SymbolRedefinition e) { return -3; }
 }
 
-
+void Assembler::write() {
+    BinaryRW* rw = new BinaryRW(sectionTable, symbolTable);
+    rw->write(std::string(outputFile));
+    delete rw;
+}

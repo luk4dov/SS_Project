@@ -8,7 +8,8 @@
 #include <stdint.h>
 #include <iomanip>
 
-typedef unsigned int uint32;
+typedef uint32_t uint32;
+typedef uint8_t uchar;
 
 enum {
     STATUS = 0,
@@ -43,7 +44,7 @@ public:
     uint32 addr;
     std::string name;
     std::unordered_map<std::string, std::vector<uint32>> reloc_table;
-    std::vector<char> data;
+    std::vector<uchar> data;
 };
 
 enum {
@@ -77,6 +78,5 @@ enum {
     LEFT = 0,
     RIGHT
 } typedef ShiftOC;
-
 
 #endif
