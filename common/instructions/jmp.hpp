@@ -5,21 +5,20 @@
 
 class JmpInstruction : public Instruction {
 public:    
-    JmpInstruction(short, short, uint32, std::string, Section*,  std::unordered_map<std::string, Symbol*>&, short, JMPCondition);
+    JmpInstruction(int, int, uint32, const std::string&, int, JMPCondition);
     ~JmpInstruction() override {}
-    
-    static Instruction* createInstruction(short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
-    
-    int write_section_data() override;
+
+    static Instruction* createInstruction(const std::string&, int, int, uint32, const std::string&, int);
+
+    int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
 
 private:
-    short r1;
-    short r2;
+    int r1;
+    int r2;
+    int r3;
     uint32 immediate;
     std::string label;
-    Section* section;
-    std::unordered_map<std::string, Symbol*>& symbolTable;
-    short type;
+    int type;
     JMPCondition cond;
 };
 

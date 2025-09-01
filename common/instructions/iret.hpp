@@ -5,14 +5,12 @@
 
 class IretInstruction : public Instruction {
 public:
-    IretInstruction(Section* section) : Instruction(), section(section) {}
+    IretInstruction() : Instruction("iret") {}
     ~IretInstruction() override {};
 
-    static Instruction* createInstruction(short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
+    static Instruction* createInstruction(const std::string&, int, int, uint32, const std::string&, int);
 
-    int write_section_data() override;
-private:
-    Section* section;
+    int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
 };
 
 #endif

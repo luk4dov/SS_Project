@@ -13,7 +13,6 @@ Assembler::~Assembler() {
     }
 }
 
-
 void Assembler::removeLocalSymbols() {
     std::vector<std::string> localSymbols;
     for(auto& [symbolName, symbol] : symbolTable) {                                     // check for every symbol
@@ -29,10 +28,10 @@ void Assembler::removeLocalSymbols() {
                 Symbol* sym = symbolTable[symbolName];
 
                 section->reloc_table["." + sym->section].push_back(offset);             // create new relocation but over symbol's section
-                section->data[offset] = (symbol->offset >> 24) & 0xff;                  // load symbol's offset from it's section to memory; little endian
-                section->data[offset+1] = (symbol->offset >> 16) & 0xff;
-                section->data[offset+2] = (symbol->offset >> 8) & 0xff;
-                section->data[offset+3] = symbol->offset & 0xff;
+                section->data[offset] = symbol->offset & 0xff;                          // load symbol's offset from it's section to memory; little endian
+                section->data[offset+1] = (symbol->offset >> 8) & 0xff;
+                section->data[offset+2] = (symbol->offset >> 16) & 0xff;
+                section->data[offset+3] = (symbol->offset >> 24) & 0xff;
             }
         }
     }
@@ -42,10 +41,10 @@ void Assembler::removeLocalSymbols() {
     }
 }
 
-void Assembler::selectInstruction(std::string name, short reg1, short reg2, uint32 immediate, std::string label, short type) {
-    Instruction* instruction = Instruction::instructions[name](reg1, reg2, immediate, label, sectionTable[section], symbolTable, type);
+void Assembler::selectInstruction(std::string op, int reg1, int reg2, uint32 immediate, std::string label, int type) {
+    Instruction* instruction = Instruction::instructions[op](op, reg1, reg2, immediate, label, type);
     
-    int ret = instruction->write_section_data();
+    int ret = instruction->writeSectionData(sectionTable[section], symbolTable);
     
     if (instruction) delete instruction;
 }
@@ -82,10 +81,10 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
 
     } else if(directive == "word") {
         if(name.empty()) { // .word immediate
-            sectionTable[section]->data.push_back((immediate >> 24) & 0xff);
-            sectionTable[section]->data.push_back((immediate >> 16) & 0xff);
-            sectionTable[section]->data.push_back((immediate >> 8) & 0xff);
             sectionTable[section]->data.push_back(immediate & 0xff);
+            sectionTable[section]->data.push_back((immediate >> 8) & 0xff);
+            sectionTable[section]->data.push_back((immediate >> 16) & 0xff);
+            sectionTable[section]->data.push_back((immediate >> 24) & 0xff);
         } else { // do reloc, it's easier
             // check if the symbol exists in symbolTable
             if(symbolTable.find(name) == symbolTable.end()) {
@@ -141,6 +140,17 @@ void Assembler::printStat() {
         std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
         for(uint32 offset : section->reloc_table[sectionName]) {
             std::cout << offset << '\n';
+        }
+    }
+    std::cout << "------------------------------------------------------\n";
+
+    for(auto [sectionName, section] : sectionTable) {
+        for(int i = 0; i < section->data.size(); i += 4) {
+            uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
+            std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
+                                  << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
+                                  << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
+                                  << std::setw(2) << (binary_data & 0xff) << '\n';
         }
     }
 }

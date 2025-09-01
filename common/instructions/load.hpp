@@ -5,21 +5,22 @@
 
 class LoadInstruction : public Instruction {
 public:
-    LoadInstruction(short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
+    LoadInstruction(int, int, uint32, const std::string&, int, LoadStoreOC);
     ~LoadInstruction() override {};
 
-    static Instruction* createInstruction(short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
+    static Instruction* createInstruction(const std::string&, int, int, uint32, const std::string&, int);
 
-    int write_section_data() override;
+    int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
 
 private:
-    short rd;
-    short rs;
+    int r1;
+    int r2;
+    int r3;
+    int disp;
     uint32 immediate;
     std::string label;
-    Section* section;
-    std::unordered_map<std::string, Symbol*>& symbolTable;
-    short type;
+    int type;
+    LoadStoreOC op;
 };
 
 #endif

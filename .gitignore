@@ -3,3 +3,5 @@ test*
 *.txt
 *.json
 build/*
+*_exec
+*.o

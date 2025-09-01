@@ -2,7 +2,7 @@
 
 static Assembler* assembler;
 
-void selectInstruction(const char* name, short reg1, short reg2, uint32 immediate, const char* label, short type) {
+void selectInstruction(const char* name, int reg1, int reg2, uint32 immediate, const char* label, int type) {
     assembler->selectInstruction(std::string(name), reg1, reg2, immediate, std::string(label), type);
 }
 

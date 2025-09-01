@@ -12,10 +12,10 @@ typedef uint32_t uint32;
 typedef uint8_t uchar;
 
 enum {
-    STATUS = 0,
+    CAUSE = 0,
     HANDLER,
-    CAUSE
-} typedef CSR;
+    STATUS
+} typedef CSRREG;
 
 enum {
     ALWAYS = 0,
@@ -78,5 +78,11 @@ enum {
     LEFT = 0,
     RIGHT
 } typedef ShiftOC;
+
+enum {
+    REGULAR = 0,
+    STACK = 1,
+    CSR = 2
+} typedef LoadStoreOC;
 
 #endif

@@ -1,10 +1,10 @@
 #include "halt.hpp"
 
-Instruction* HaltInstruction::createInstruction(short reg1, short reg2, uint32 immediate, std::string label, Section* section, std::unordered_map<std::string, Symbol*>& symbolTable, short type) {
-    return new HaltInstruction(section);
+Instruction* HaltInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
+    return new HaltInstruction();
 }
 
-int HaltInstruction::write_section_data() {
+int HaltInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     section->data.push_back(0x00);
     section->data.push_back(0x00);
     section->data.push_back(0x00);

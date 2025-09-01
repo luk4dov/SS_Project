@@ -5,16 +5,17 @@
 
 class XchgInstruction : public Instruction {
 public:
-    XchgInstruction(short rs, short rd, Section* section) : Instruction(), rs(rs), rd(rd), section(section) {}
+    XchgInstruction(int r1, int r2, int r3, int disp) : Instruction("xchg"), r1(r1), r2(r2), r3(r3), disp(disp) {}
     ~XchgInstruction() override {}
 
-    static Instruction* createInstruction(short, short, uint32, std::string, Section*, std::unordered_map<std::string, Symbol*>&, short);
-    
-    int write_section_data() override;
+    static Instruction* createInstruction(const std::string&, int, int, uint32, const std::string&, int);
+
+    int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
 private:
-    short rs;
-    short rd;
-    Section* section;
+    int r1;
+    int r2;
+    int r3;
+    int disp;
 };
 
 #endif

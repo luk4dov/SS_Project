@@ -1,10 +1,10 @@
 #include "call.hpp"
 
-Instruction* CallInstruction::createInstruction(short reg1, short reg2, uint32 immediate, std::string label, Section* section, std::unordered_map<std::string, Symbol*>& symbolTable, short mn) {
-    return new CallInstruction(label, immediate, section, symbolTable, mn);
+Instruction* CallInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
+    return new CallInstruction(label, immediate, type);
 }
 
-int CallInstruction::write_section_data() {
+int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     // call instruction received immediate through immediate and identifier through the label, check which one is it
     uint32 binary;
     if(type == 0) { 

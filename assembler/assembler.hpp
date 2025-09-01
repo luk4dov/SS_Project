@@ -16,7 +16,7 @@ public:
     int assemble();
     void write();
 
-    void selectInstruction(std::string, short, short, uint32, std::string, short);
+    void selectInstruction(std::string, int, int, uint32, std::string, int);
     void labelDefinition(std::string);
     void selectDirective(std::string, std::string, uint32);
 

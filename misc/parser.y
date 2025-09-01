@@ -8,7 +8,7 @@
 
     typedef unsigned int uint32;
 
-    extern void selectInstruction(const char*, short, short, uint32, const char*, short);
+    extern void selectInstruction(const char*, int, int, uint32, const char*, int);
     extern void selectDirective(const char*, const char*, uint32);
     extern void labelDefinition(const char*);
 
@@ -58,7 +58,7 @@ directive:
 |   WORD word_identifier_list
 |   SKIP NUMBER { selectDirective("skip", "", $2); }
 |   ASCII string { selectDirective("ascii", $2, 0); }
-|   END { selectDirective("end", "", 0); };
+|   END { selectDirective("end", "", 0); return 0; };
 
 
 extern_identifier_list:

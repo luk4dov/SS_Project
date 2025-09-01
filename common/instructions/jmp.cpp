@@ -1,13 +1,23 @@
 #include "jmp.hpp"
 
-JmpInstruction::JmpInstruction(short r1, short r2, uint32 immediate, std::string label, Section* section,  std::unordered_map<std::string, Symbol*>& symbolTable, short type, JMPCondition cond) :
-                                r1(r1), r2(r2), immediate(immediate), label(label), section(section), symbolTable(symbolTable), type(type), cond(cond)  {}
+JmpInstruction::JmpInstruction(int r1, int r2, uint32 immediate, const std::string& label, int type, JMPCondition cond) :
+    Instruction("jmp"), r1(r1), r2(r2), immediate(immediate), label(label), type(type), cond(cond)  {}
 
-Instruction* JmpInstruction::createInstruction(short reg1, short reg2, uint32 immediate, std::string label, Section* section, std::unordered_map<std::string, Symbol*>& symbolTable, short type) {
-    return new JmpInstruction(reg1, reg2, immediate, label, section, symbolTable, type, ALWAYS);
+Instruction* JmpInstruction::createInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
+    JMPCondition cond = ALWAYS;
+
+    if(instr == "bne") {
+        cond = BNE;
+    } else if(instr == "beq") {
+        cond = BEQ;
+    } else if(instr == "bgt") {
+        cond = BGT;
+    }
+
+    return new JmpInstruction(reg1, reg2, immediate, label, type, cond);
 }
 
-int JmpInstruction::write_section_data() {    
+int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     uint32 binary = 0;
     if(type == 0) { // jmp imm;
         if (immediate <= 0x7ff) {
