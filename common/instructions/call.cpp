@@ -1,13 +1,17 @@
 #include "call.hpp"
 
-Instruction* CallInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
+Instruction* CallInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
     return new CallInstruction(label, immediate, type);
+}
+
+Instruction* CallInstruction::binaryInstruction(int mod, int r1, int r2, int r3, int disp) {
+    return new CallInstruction(mod, r1, r2, r3, disp);
 }
 
 int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     // call instruction received immediate through immediate and identifier through the label, check which one is it
     uint32 binary;
-    if(type == 0) { 
+    if(!label.empty()) { 
         Symbol* symbol = nullptr;
         if(symbolTable.find(label) == symbolTable.end()) { // label not found -> put symbol in symbol table and create relocation entry;
             symbolTable[label] = symbol = new Symbol(section->name, section->data.size());
@@ -30,12 +34,12 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
         return 12;
     }
     // if label is empty -> call immediate
-    // relocation must be done, and the address that needs to be fixed is section+offset
+    // relocation must be done against the current section (".section") so the linker can resolve to section->addr + offset
     binary = serialize(CALL, 1, 15, 0, 0, 4);
     write_binary(section, binary);
     binary = serialize(JMP, 0, 15, 0, 0, 4);
     write_binary(section, binary);
-    section->reloc_table[label].push_back(section->data.size());
+    section->reloc_table["." + section->name].push_back(section->data.size());
     write_binary(section, 0x0);
     return 12;
 }

@@ -1,6 +1,6 @@
 #include "logic.hpp"
 
-Instruction* LogicInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 imm, const std::string& label, int type) {
+Instruction* LogicInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 imm, const std::string& label, int type) {
     LogicOC mod = NOT;
 
     if(instr == "and") {
@@ -14,6 +14,10 @@ Instruction* LogicInstruction::createInstruction(const std::string& instr, int r
     if(mod == NOT)
         return new LogicInstruction(r1, r1, 0, mod);
     return new LogicInstruction(r2, r2, r1, mod);
+}
+
+Instruction* LogicInstruction::binaryInstruction(int mod, int r1, int r2, int r3, int disp) {
+    return new LogicInstruction(r1, r2, r3, LogicOC(mod));
 }
 
 int LogicInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {

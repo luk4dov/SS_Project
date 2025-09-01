@@ -8,6 +8,8 @@
 %}
 
 %option noyywrap
+%option nounput
+%option noinput
 
 DIGIT       [0-9]
 HEXDIGIT    [0-9A-Fa-f]

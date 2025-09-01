@@ -15,15 +15,17 @@ Assembler::~Assembler() {
 
 void Assembler::removeLocalSymbols() {
     std::vector<std::string> localSymbols;
-    for(auto& [symbolName, symbol] : symbolTable) {                                     // check for every symbol
+    for(const auto& [symbolName, symbol] : symbolTable) {                               // check for every symbol
         if(symbol->global) continue;                                                    // if symbol is global there is no need to do anything
         if(!symbol->defined) {                                                          // error, local symbol that's not defined
             throw LocalSymbolNotDefined(symbolName, std::string(inputFile));
         }
-        // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address         
+        
         localSymbols.push_back(symbolName);
 
-        for(auto& [sectionName, section] : sectionTable) {
+        // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address         
+
+        for(const auto& [sectionName, section] : sectionTable) {
             for(uint32 offset : section->reloc_table[symbolName]) {                     // for every relocation of symbol in this section
                 Symbol* sym = symbolTable[symbolName];
 
@@ -35,18 +37,29 @@ void Assembler::removeLocalSymbols() {
             }
         }
     }
-    for(std::string symbol : localSymbols) {
-        delete symbolTable[symbol];
-        symbolTable.erase(symbol);
+
+    for(const std::string& symbolName : localSymbols) { // remove entries in relocation tables for local symbols
+        for(const auto& [sectionName, section] : sectionTable) {
+            section->reloc_table.erase(symbolName);
+        }
+    }
+
+    for(const std::string& symbolName : localSymbols) {
+        delete symbolTable[symbolName];
+        symbolTable.erase(symbolName);
     }
 }
 
-void Assembler::selectInstruction(std::string op, int reg1, int reg2, uint32 immediate, std::string label, int type) {
-    Instruction* instruction = Instruction::instructions[op](op, reg1, reg2, immediate, label, type);
-    
+void Assembler::selectInstruction(std::string instr, int reg1, int reg2, uint32 immediate, std::string label, int type) {
+    Instruction* instruction = Instruction::parsedInstructions[instr](instr, reg1, reg2, immediate, label, type);
+
     int ret = instruction->writeSectionData(sectionTable[section], symbolTable);
     
-    if (instruction) delete instruction;
+    if(ret == -1) {
+        throw LiteralNotIn12Bits(immediate);
+    }
+
+    delete instruction;
 }
 
 void Assembler::labelDefinition(std::string symbolName) {
@@ -65,14 +78,14 @@ void Assembler::labelDefinition(std::string symbolName) {
 
 void Assembler::selectDirective(std::string directive, std::string name, uint32 immediate) {
     if(directive == "global" || directive == "extern")  {
-        // if it doesn't exist in symbolTable, insert it, anyways check the global flag
+        
         if(symbolTable.find(name) == symbolTable.end()) {
             symbolTable[name] = new Symbol("UND", 0, true, false);
         }
         symbolTable[name]->global = true;
 
     } else if(directive == "section") {
-        // check if section exists in sectionTable, otherwise create new section
+        
         if(sectionTable.find(name) == sectionTable.end()) {
             sectionTable[name] = new Section(0, 0, name);
             symbolTable["." + name] = new Symbol(name, 0, true, true);
@@ -98,7 +111,7 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
         }
     
     } else if (directive == "skip") {
-        for(int i = 0; i < immediate; ++i) { // 1 push_back(0) -> 00000000b
+        for(int i = 0; i < immediate; ++i) {
             sectionTable[section]->data.push_back(0x00);
         }
 
@@ -128,21 +141,23 @@ void Assembler::printStat() {
 
     for(auto [symbolName, symbol] : symbolTable) {
         for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table.size() > 0) 
+            if(section->reloc_table[symbolName].size() > 0) 
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
-            for(uint32 offset : section->reloc_table[symbolName]) {
-                std::cout << offset << '\n';
-            }
+                for(uint32 offset : section->reloc_table[symbolName]) {
+                    std::cout << offset << '\n';
+                }
         }
     }
 
-    for(auto [sectionName, section] : sectionTable) {
-        std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
-        for(uint32 offset : section->reloc_table[sectionName]) {
-            std::cout << offset << '\n';
-        }
-    }
-    std::cout << "------------------------------------------------------\n";
+    // for(auto [sectionName, section] : sectionTable) {
+    //     if(section->reloc_table.size() > 0) {
+    //         std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
+    //         for(uint32 offset : section->reloc_table[sectionName]) {
+    //             std::cout << offset << '\n';
+    //         }
+    //     }
+    // }
+
 
     for(auto [sectionName, section] : sectionTable) {
         for(int i = 0; i < section->data.size(); i += 4) {
@@ -153,6 +168,7 @@ void Assembler::printStat() {
                                   << std::setw(2) << (binary_data & 0xff) << '\n';
         }
     }
+    std::cout << "------------------------------------------------------\n";
 }
 
 int Assembler::assemble() {
@@ -161,12 +177,13 @@ int Assembler::assemble() {
     try {
         int ret = yyparse();
 
-        printStat();
+        // printStat();
 
         write();
 
         return ret;
     }
+    catch (LiteralNotIn12Bits e) { return -1; }
     catch (LocalSymbolNotDefined e) { return -2; }
     catch (SymbolRedefinition e) { return -3; }
 }

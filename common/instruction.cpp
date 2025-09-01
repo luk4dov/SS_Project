@@ -11,40 +11,49 @@
 #include "instructions/logic.hpp"
 #include "instructions/shift.hpp"
 
-using InstructionFactory = Instruction* (*) (const std::string&, int, int, uint32, const std::string&, int);
+using InstructionFormat = Instruction* (*) (const std::string&, int, int, uint32, const std::string&, int);
 
-std::unordered_map<std::string, InstructionFactory> Instruction::instructions = {
-    {"halt",  HaltInstruction::createInstruction},
-    {"int",   IntInstruction::createInstruction},
-    {"iret",  IretInstruction::createInstruction},
-    {"call",  CallInstruction::createInstruction},
-    {"ret",   LoadInstruction::createInstruction},
-    {"jmp",   JmpInstruction::createInstruction},
-    {"beq",   JmpInstruction::createInstruction},
-    {"bne",   JmpInstruction::createInstruction},
-    {"bgt",   JmpInstruction::createInstruction},
-    {"push",  StoreInstruction::createInstruction},
-    {"pop",   LoadInstruction::createInstruction},
-    {"xchg",  XchgInstruction::createInstruction}, 
-    {"add",   ArithInstruction::createInstruction},
-    {"sub",   ArithInstruction::createInstruction},
-    {"mul",   ArithInstruction::createInstruction},
-    {"div",   ArithInstruction::createInstruction},
-    {"not",   LogicInstruction::createInstruction},
-    {"and",   LogicInstruction::createInstruction},
-    {"or",    LogicInstruction::createInstruction},
-    {"xor",   LogicInstruction::createInstruction},
-    {"shl",   ShiftInstruction::createInstruction},
-    {"shr",   ShiftInstruction::createInstruction},
-    {"ld",    LoadInstruction::createInstruction},
-    {"st",    StoreInstruction::createInstruction},
-    {"csrrd", LoadInstruction::createInstruction},
-    {"csrwr", StoreInstruction::createInstruction}
+std::unordered_map<std::string, InstructionFormat> Instruction::parsedInstructions = {
+    {"halt",  HaltInstruction::parsedInstruction},
+    {"int",   IntInstruction::parsedInstruction},
+    {"iret",  IretInstruction::parsedInstruction},
+    {"call",  CallInstruction::parsedInstruction},
+    {"ret",   LoadInstruction::parsedInstruction},
+    {"jmp",   JmpInstruction::parsedInstruction},
+    {"beq",   JmpInstruction::parsedInstruction},
+    {"bne",   JmpInstruction::parsedInstruction},
+    {"bgt",   JmpInstruction::parsedInstruction},
+    {"push",  StoreInstruction::parsedInstruction},
+    {"pop",   LoadInstruction::parsedInstruction},
+    {"xchg",  XchgInstruction::parsedInstruction},
+    {"add",   ArithInstruction::parsedInstruction},
+    {"sub",   ArithInstruction::parsedInstruction},
+    {"mul",   ArithInstruction::parsedInstruction},
+    {"div",   ArithInstruction::parsedInstruction},
+    {"not",   LogicInstruction::parsedInstruction},
+    {"and",   LogicInstruction::parsedInstruction},
+    {"or",    LogicInstruction::parsedInstruction},
+    {"xor",   LogicInstruction::parsedInstruction},
+    {"shl",   ShiftInstruction::parsedInstruction},
+    {"shr",   ShiftInstruction::parsedInstruction},
+    {"ld",    LoadInstruction::parsedInstruction},
+    {"st",    StoreInstruction::parsedInstruction},
+    {"csrrd", LoadInstruction::parsedInstruction},
+    {"csrwr", StoreInstruction::parsedInstruction}
 };
 
-Instruction* Instruction::pickInstruction(const std::string& name, int r1, int r2, uint32 imm, const std::string& label, int type) {
-    return instructions[name](name, r1, r2, imm, label, type);
-}
+std::unordered_map<OperationCode, Instruction* (*) (int,int,int,int,int)> Instruction::binaryInstructions = {
+    {HALT, HaltInstruction::binaryInstruction},
+    {INT, IntInstruction::binaryInstruction},
+    {CALL, CallInstruction::binaryInstruction},
+    {JMP, JmpInstruction::binaryInstruction},
+    {ASWAP, XchgInstruction::binaryInstruction},
+    {ARITH, ArithInstruction::binaryInstruction},
+    {LOGIC, LogicInstruction::binaryInstruction},
+    {SHIFT, ShiftInstruction::binaryInstruction},
+    {LOAD, LoadInstruction::binaryInstruction},
+    {STORE, StoreInstruction::binaryInstruction}
+};
 
 uint32 Instruction::serialize(OperationCode op, short mn, short ra, short rb, short rc, short disp) {
     return (((op & 0xf) << 28) | 

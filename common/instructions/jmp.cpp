@@ -3,7 +3,10 @@
 JmpInstruction::JmpInstruction(int r1, int r2, uint32 immediate, const std::string& label, int type, JMPCondition cond) :
     Instruction("jmp"), r1(r1), r2(r2), immediate(immediate), label(label), type(type), cond(cond)  {}
 
-Instruction* JmpInstruction::createInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
+JmpInstruction::JmpInstruction(int mod, int r1, int r2, int r3, int disp) :
+    Instruction("jmp"), r1(r1), r2(r2), r3(r3), disp(disp), cond(JMPCondition(mod % 8)), mod(mod) {}
+
+Instruction* JmpInstruction::parsedInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
     JMPCondition cond = ALWAYS;
 
     if(instr == "bne") {
@@ -15,6 +18,10 @@ Instruction* JmpInstruction::createInstruction(const std::string& instr, int reg
     }
 
     return new JmpInstruction(reg1, reg2, immediate, label, type, cond);
+}
+
+Instruction* JmpInstruction::binaryInstruction(int mod, int r1, int r2, int r3, int disp) {
+    return new JmpInstruction(mod, r1, r2, r3, disp);
 }
 
 int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {

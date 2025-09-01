@@ -11,6 +11,9 @@
 typedef uint32_t uint32;
 typedef uint8_t uchar;
 
+#define MAX_VAL 2047
+#define MIN_VAL -2048
+
 enum {
     CAUSE = 0,
     HANDLER,
@@ -56,8 +59,8 @@ enum {
     ARITH,
     LOGIC,
     SHIFT,
-    ST,
-    LD
+    STORE,
+    LOAD
 } typedef OperationCode;
 
 enum {

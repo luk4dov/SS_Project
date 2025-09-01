@@ -127,7 +127,6 @@ uchar BinaryRW::readByte() {
     return byte;
 }
 
-
 void BinaryRW::writeHex(std::string fileName) {
     file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
     writeUint32(sectionTable.size());
@@ -142,7 +141,7 @@ void BinaryRW::writeHex(std::string fileName) {
 
     file.close();
     
-    std::fstream file = std::fstream(fileName + ".txt", std::ios::out | std::ios::trunc);
+    std::fstream file = std::fstream("program.txt", std::ios::out | std::ios::trunc);
     for(auto [sectionName, section] : sectionTable) {
         int addr = section->addr;
 
@@ -155,8 +154,4 @@ void BinaryRW::writeHex(std::string fileName) {
         }
     }
     file.close();
-}
-
-void BinaryRW::readHex(std::string fileName) {
-
 }

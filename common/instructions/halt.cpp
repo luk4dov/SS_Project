@@ -1,6 +1,10 @@
 #include "halt.hpp"
 
-Instruction* HaltInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
+Instruction* HaltInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
+    return new HaltInstruction();
+}
+
+Instruction* HaltInstruction::binaryInstruction(int mod, int reg1, int reg2, int reg3, int disp) {
     return new HaltInstruction();
 }
 

@@ -51,7 +51,7 @@ int Linker::link() {
             // symbol with that name already exists, check if it's defined or not
             // if it's defined, continue
             // if it's not defined, check if the tempSymbol is defined, if it is, then update the symbol in the main table
-            if(symbolTable[tempSymbolName]->defined) {
+            if(symbolTable[tempSymbolName]->defined && tempSymbolName[0] != '.') {
                 if(tempSymbol->defined) {  // two global symbols with the same name and both defined, error
                     throw SymbolMultipleDefinition(tempSymbolName);
                 }
@@ -64,6 +64,7 @@ int Linker::link() {
         tempSectionTable.clear();
         tempSymbolTable.clear();
     }
+
     return 0;
 }
 
@@ -75,8 +76,7 @@ int Linker::createRelocatable(std::string outputFile) {
 }
 
 int Linker::createExecutable(std::string outputFile) {
-    
-    for(auto& [symbolName, symbol] : symbolTable) {
+    for(const auto& [symbolName, symbol] : symbolTable) {
         if(!symbol->defined) {
             throw SymbolNotDefined(symbolName);
         }
@@ -114,8 +114,8 @@ int Linker::createExecutable(std::string outputFile) {
     }
 
         // resolve relocations
-    for(auto& [sectionName, section] : sectionTable) {
-        for(auto& [symbolName, offsets] : section->reloc_table) {
+    for(const auto& [sectionName, section] : sectionTable) {
+        for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
             uint32 symbolAddress = sectionTable[symbol->section]->addr + symbol->offset;
 
@@ -145,6 +145,7 @@ int Linker::linkAndCreateOutput() {
         else {
             return createExecutable(outputFile);
         }
+
         return 0;
     }
     catch (SymbolNotDefined e) { return -12; }
@@ -167,20 +168,22 @@ void Linker::printStat() {
 
     for(auto [symbolName, symbol] : symbolTable) {
         for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table.size() > 0) 
+            if(section->reloc_table[symbolName].size() > 0) 
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
-            for(uint32 offset : section->reloc_table[symbolName]) {
-                std::cout << offset << '\n';
-            }
+                for(uint32 offset : section->reloc_table[symbolName]) {
+                    std::cout << offset << '\n';
+                }
         }
     }
 
-    for(auto [sectionName, section] : sectionTable) {
-        std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
-        for(uint32 offset : section->reloc_table[sectionName]) {
-            std::cout << offset << '\n';
-        }
-    }
+    // for(auto [sectionName, section] : sectionTable) {
+    //     if(section->reloc_table.size() > 0) {
+    //         std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
+    //         for(uint32 offset : section->reloc_table[sectionName]) {
+    //             std::cout << offset << '\n';
+    //         }
+    //     }
+    // }
 
 
     for(auto [sectionName, section] : sectionTable) {
@@ -192,4 +195,5 @@ void Linker::printStat() {
                                   << std::setw(2) << (binary_data & 0xff) << '\n';
         }
     }
+    std::cout << "------------------------------------------------------\n";
 }

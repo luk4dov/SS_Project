@@ -1,7 +1,7 @@
 #include "arith.hpp"
 
 
-Instruction* ArithInstruction::createInstruction(const std::string& instr, int r1, int r2, uint32 imm, const std::string& label, int type) {
+Instruction* ArithInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 imm, const std::string& label, int type) {
     ArithOC mod = ADD;
 
     if(instr == "sub") {
@@ -13,6 +13,10 @@ Instruction* ArithInstruction::createInstruction(const std::string& instr, int r
     }
 
     return new ArithInstruction(r2, r2, r1, mod);
+}
+
+Instruction* ArithInstruction::binaryInstruction(int mod, int r1, int r2, int r3, int disp) {
+    return new ArithInstruction(r1, r2, r3, ArithOC(mod));
 }
 
 int ArithInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {

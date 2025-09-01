@@ -4,6 +4,14 @@
 #include "types.hpp"
 #include <exception>
 
+
+class LiteralNotIn12Bits : public std::exception {
+public:
+    LiteralNotIn12Bits(uint32 literal) {
+        std::cerr << "Error: literal " << literal << " is not in 12 bits.\n";
+    }
+};
+
 class LocalSymbolNotDefined  : public std::exception {
 public:
     LocalSymbolNotDefined(std::string symbolName, std::string fileName) {

@@ -1,6 +1,10 @@
 #include "int.hpp"
 
-Instruction* IntInstruction::createInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
+Instruction* IntInstruction::parsedInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
+    return new IntInstruction();
+}
+
+Instruction* IntInstruction::binaryInstruction(int mod, int reg1, int reg2, int reg3, int disp) {
     return new IntInstruction();
 }
 
