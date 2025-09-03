@@ -17,12 +17,15 @@ Instruction* LoadInstruction::parsedInstruction(const std::string& instr, int r1
     else if(instr == "pop") {
         return new LoadInstruction(r1, 14, 0, "", 0, LoadStoreOC::STACK);
     } else if(instr == "csrrd" || instr == "csrwr") {
-        if(label == "status")
+        if(label == "%status") {
             r2 = STATUS;
-        else if(label == "handler")
+        }
+        else if(label == "%handler") {
             r2 = HANDLER;
-        else if(label == "cause")
+        }
+        else if(label == "%cause") {
             r2 = CAUSE;
+        }
 
         return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::CSR);
     }
@@ -41,7 +44,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
     } else if(op == LoadStoreOC::CSR) {
         uint32 binary;
         if(label == "csrwr") {
-            binary = serialize(LOAD, 4, r1, r2, 0, 0); // csr[r2] <= r1
+            binary = serialize(LOAD, 4, r2, r1, 0, 0); // csr[r1] <= r2
         } else if(label == "csrrd") {
             binary = serialize(LOAD, 0, r1, r2, 0, 0); // r1 <= csr[r2]
         }

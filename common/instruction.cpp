@@ -39,7 +39,7 @@ std::unordered_map<std::string, InstructionFormat> Instruction::parsedInstructio
     {"ld",    LoadInstruction::parsedInstruction},
     {"st",    StoreInstruction::parsedInstruction},
     {"csrrd", LoadInstruction::parsedInstruction},
-    {"csrwr", StoreInstruction::parsedInstruction}
+    {"csrwr", LoadInstruction::parsedInstruction}
 };
 
 std::unordered_map<OperationCode, Instruction* (*) (int,int,int,int,int)> Instruction::binaryInstructions = {
@@ -62,13 +62,15 @@ uint32 Instruction::serialize(OperationCode op, short mn, short ra, short rb, sh
             ((rb & 0xf) << 16) | 
             ((rc & 0xf) << 12) | 
             (disp & 0xfff));
+    // return (disp & 0xfff) << 20 | (rc & 0xf) << 16 | (rb & 0xf) << 12 | (ra & 0xf) << 8 | (mn & 0xf) << 4 | (op & 0xf);
+    
 }
 
 
 
 void Instruction::write_binary(Section* section, uint32 binary_data) {
-    section->data.push_back(binary_data >> 24);
-    section->data.push_back((binary_data >> 16) & 0xff);
-    section->data.push_back((binary_data >> 8) & 0xff);
     section->data.push_back(binary_data & 0xff);
+    section->data.push_back((binary_data >> 8) & 0xff);
+    section->data.push_back((binary_data >> 16) & 0xff);
+    section->data.push_back(binary_data >> 24);
 }

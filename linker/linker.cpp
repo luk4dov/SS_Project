@@ -117,19 +117,24 @@ int Linker::createExecutable(std::string outputFile) {
         for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
             uint32 symbolAddress = sectionTable[symbol->section]->addr + symbol->offset;
-
+            
             for(uint32 offset : offsets) {
-                section->data[offset] += symbolAddress & 0xff;
-                section->data[offset+1] += (symbolAddress >> 8) & 0xff;
-                section->data[offset+2] += (symbolAddress >> 16) & 0xff;
-                section->data[offset+3] += (symbolAddress >> 24) & 0xff;
+                uint32 addend = (section->data[offset] & 0xff) | 
+                                 ((section->data[offset+1] & 0xff) << 8) | 
+                                 ((section->data[offset+2] & 0xff) << 16) | 
+                                 ((section->data[offset+3] & 0xff) << 24);
+                
+                section->data[offset] = (symbolAddress + addend) & 0xff;
+                section->data[offset+1] = ((symbolAddress + addend) >> 8) & 0xff;
+                section->data[offset+2] = ((symbolAddress + addend) >> 16) & 0xff;
+                section->data[offset+3] = ((symbolAddress + addend) >> 24) & 0xff;
             }
         }
     }
 
     // write to binary file
     BinaryRW* rw = new BinaryRW();
-    rw->writeHex(outputFile, sectionTable);
+    rw->writeHex(outputFile, sectionTable, maxSectionAddress);
     delete rw;
     return 0;
 }
@@ -170,7 +175,7 @@ void Linker::printStat() {
             if(section->reloc_table[symbolName].size() > 0) 
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
                 for(uint32 offset : section->reloc_table[symbolName]) {
-                    std::cout << offset << '\n';
+                    std::cout << std::hex << offset << '\n';
                 }
         }
     }

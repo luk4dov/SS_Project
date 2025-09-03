@@ -15,18 +15,21 @@ public:
     void executeInstruction();
     void handleInterrupt();
 
+    const bool getHalt() const { return halt; }
+    void setHalt() { halt = true; }
+
     void setRegister(REGS r, int val) { registers[r] = val; }
     int getRegister(REGS r) { return registers[r]; }
 
     void setCSR(CSRREG r, int val) { csr[r] = val; }
     uint32 getCSR(CSRREG r) { return csr[r]; }
 
-    void writeMem(uint32 address, uint32 data) { memory->write(address, data); }
+    void writeMem(uint32 address, int data) { memory->write(address, data); }
     uint32 readMem(uint32 address) { return memory->read(address); }
 
-    void halt() {};
-
 private:
+    bool halt;
+
     int registers[16];
     uint32 csr[3]; // status, handler, cause
     

@@ -43,7 +43,7 @@ void Assembler::removeLocalSymbols() {
             section->reloc_table.erase(symbolName);
         }
     }
-
+    
     for(const std::string& symbolName : localSymbols) {
         delete symbolTable[symbolName];
         symbolTable.erase(symbolName);
@@ -149,16 +149,6 @@ void Assembler::printStat() {
         }
     }
 
-    // for(auto [sectionName, section] : sectionTable) {
-    //     if(section->reloc_table.size() > 0) {
-    //         std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
-    //         for(uint32 offset : section->reloc_table[sectionName]) {
-    //             std::cout << offset << '\n';
-    //         }
-    //     }
-    // }
-
-
     for(auto [sectionName, section] : sectionTable) {
         for(int i = 0; i < section->data.size(); i += 4) {
             uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
@@ -176,8 +166,6 @@ int Assembler::assemble() {
 
     try {
         int ret = yyparse();
-
-        // printStat();
 
         write();
 

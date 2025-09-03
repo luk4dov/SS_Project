@@ -1,7 +1,7 @@
 #include "cpu.hpp"
 #include "../../common/instruction.hpp"
 
-CPU::CPU() {
+CPU::CPU() : halt(false) {
     reset();
 }
 

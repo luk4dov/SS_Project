@@ -127,7 +127,8 @@ uchar BinaryRW::readByte() {
     return byte;
 }
 
-void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Section*>& sectionTable) {
+
+void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Section*>& sectionTable, uint32 maxSectionAddress) {
     file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
     writeUint32(sectionTable.size());
 
@@ -141,10 +142,41 @@ void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Se
 
     file.close();
     
+    // merge sections after maxSectionAddress into one file for readability
+    // pickup sections after maxSectionAddress
+    std::string maxSectionName;
+    std::unordered_map<uint32, Section*> sectionsAfterMax = {};
+    for(auto& [sectionName, section] : sectionTable) {
+        if(section->addr > maxSectionAddress) {
+            sectionsAfterMax[section->addr] = section;
+        }
+        if(section->addr == maxSectionAddress) {
+            maxSectionName = sectionName;
+        }
+    }
+    // merge sections from sectionsAfterMax into one section starting from maxSectionAddress + size of section with maxSectionAddress
+    // starting from address closest to maxSectionAddress
+
+    while(sectionsAfterMax.size() > 0) {
+        uint32 currentAddress = maxSectionAddress + sectionTable[maxSectionName]->data.size();
+        
+        for(auto& [addr, section] : sectionsAfterMax) {
+            if(addr == currentAddress) {
+                sectionTable[maxSectionName]->data.insert(sectionTable[maxSectionName]->data.end(), section->data.begin(), section->data.end());
+                currentAddress += section->data.size();
+                sectionTable.erase(section->name);
+                sectionsAfterMax.erase(addr);
+                break;
+            }
+        }
+    }
     std::fstream file = std::fstream("program.txt", std::ios::out | std::ios::trunc);
     for(auto [sectionName, section] : sectionTable) {
-        int addr = section->addr;
-
+        uint32 addr = section->addr;
+        
+        // skip sections after maxSectionAddress
+        if(addr > maxSectionAddress) continue;
+        
         for(int i = 0; i < section->data.size(); i += 8) {
             file << std::hex << std::setw(8) << std::setfill('0') << addr + i << ": ";
             for(int j = 0; j < 8 && (i + j) < section->data.size(); ++j) {

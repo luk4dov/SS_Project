@@ -34,13 +34,11 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
         return 12;
     }
     // if label is empty -> call immediate
-    // relocation must be done against the current section (".section") so the linker can resolve to section->addr + offset
     binary = serialize(CALL, 1, 15, 0, 0, 4);
     write_binary(section, binary);
     binary = serialize(JMP, 0, 15, 0, 0, 4);
     write_binary(section, binary);
-    section->reloc_table["." + section->name].push_back(section->data.size());
-    write_binary(section, 0x0);
+    write_binary(section, immediate);
     return 12;
 }
 

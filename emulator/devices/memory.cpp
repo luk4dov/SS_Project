@@ -18,10 +18,11 @@ int Memory::read(uint32 address) {
     if (mem.find(block) != mem.end()) {
         return 0;
     }
-    return static_cast<int>(mem[block][word] | (mem[block][word + 1] << 8) | (mem[block][word + 2] << 16) | (mem[block][word + 3] << 24));
+
+    return static_cast<int>(mem[block][word + 3] | (mem[block][word + 2] << 8) | (mem[block][word + 1] << 16) | (mem[block][word] << 24));
 }
 
-void Memory::write(uint32 address, uint32 value) {
+void Memory::write(uint32 address, int value) {
     uint32 block = address >> 12;
     uint32 word = address & 0xfff;
     
