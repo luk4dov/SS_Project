@@ -12,6 +12,7 @@ public:
     static Instruction* binaryInstruction(int, int, int, int, int);
 
     int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
+    void execute(CPU*) override;
 };
 
 

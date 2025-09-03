@@ -43,3 +43,18 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
     write_binary(section, 0x0);
     return 12;
 }
+
+void CallInstruction::execute(CPU* cpu) {
+    uint32 sp = cpu->getRegister(SP);
+    uint32 pc = cpu->getRegister(PC);
+
+    cpu->setRegister(SP, sp - 4);
+    cpu->setRegister(PC, pc + 4);
+    cpu->writeMem(sp, pc);
+
+    uint32 address = cpu->getRegister(REGS(r1)) + cpu->getRegister(REGS(r2)) + disp;
+    if(mod == 1) {
+        address = cpu->readMem(address);
+    }
+    cpu->setRegister(PC, address);
+}

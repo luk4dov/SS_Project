@@ -1,6 +1,6 @@
 #include "binaryrw.hpp"
 
-void BinaryRW::read(std::string fileName) {
+void BinaryRW::read(std::string fileName, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable) {
     file = std::fstream(fileName, std::ios::in | std::ios::binary);
 
     uint32 symbolTableSize = readUint32();
@@ -48,7 +48,7 @@ void BinaryRW::read(std::string fileName) {
     file.close();
 }
 
-void BinaryRW::write(std::string fileName) {
+void BinaryRW::write(std::string fileName, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable) {
     file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
     
     writeUint32(symbolTable.size());
@@ -127,7 +127,7 @@ uchar BinaryRW::readByte() {
     return byte;
 }
 
-void BinaryRW::writeHex(std::string fileName) {
+void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Section*>& sectionTable) {
     file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
     writeUint32(sectionTable.size());
 
@@ -151,6 +151,30 @@ void BinaryRW::writeHex(std::string fileName) {
                 file << std::hex << std::setw(2) << std::setfill('0') << (int)section->data[i + j] << " ";
             }
             file << '\n';
+        }
+    }
+    file.close();
+}
+
+void BinaryRW::readHex(std::string fileName, std::unordered_map<uint32, std::vector<uchar>>& mem) {
+    std::fstream file = std::fstream(fileName, std::ios::in | std::ios::binary);
+
+    uint32 numOfSections = readUint32();
+
+    for(uint32 i = 0; i < numOfSections; ++i) {
+        uint32 addr = readUint32();
+        uint32 size = readUint32();
+        
+        // 32 bits for address -> 20 bits for block and 12 for word
+        for(uint32 blockAddress = addr; blockAddress < addr + size;) {
+            uint32 block = blockAddress >> 20;
+            mem[block] = std::vector<uchar>(1<<12, 0);
+
+            for(uint32 word = 0; word < (1 << 12) && (block << 20 | word) < addr + size; ++word) {
+                mem[block][word] = readByte();
+            }
+            
+            blockAddress += (1 << 12);
         }
     }
     file.close();

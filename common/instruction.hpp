@@ -2,13 +2,19 @@
 #define INSTRUCTION_HPP
 
 #include "types.hpp"
+#include "exceptions.hpp"
+#include "../emulator/devices/cpu.hpp"
+// Forward declaration to avoid circular dependency with emulator CPU
+// class CPU;
 
 class Instruction {
 public:    
+
     Instruction(std::string mn) : mn(mn) {}
     virtual ~Instruction() {};
 
     virtual int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) = 0;
+    virtual void execute(CPU*) = 0;
 
     static std::unordered_map<std::string, Instruction* (*) (const std::string&, int, int, uint32, const std::string&, int)> parsedInstructions;
     static std::unordered_map<OperationCode, Instruction* (*) (int, int, int, int, int)> binaryInstructions;

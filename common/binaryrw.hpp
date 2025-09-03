@@ -6,21 +6,17 @@
 
 class BinaryRW {
 public:
-    BinaryRW(std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable) : 
-            symbolTable(symbolTable), sectionTable(sectionTable) {}
+    BinaryRW() {}
     ~BinaryRW() {}
 
-    void read(std::string);
-    void write(std::string);
+    void read(std::string, std::unordered_map<std::string, Section*>&, std::unordered_map<std::string, Symbol*>&);
+    void write(std::string, std::unordered_map<std::string, Section*>&, std::unordered_map<std::string, Symbol*>&);
 
-    void writeHex(std::string);
-    void readHex(std::string);
+    void writeHex(std::string, std::unordered_map<std::string, Section*>&);
+    void readHex(std::string, std::unordered_map<uint32, std::vector<uchar>>&);
 
 private:
     std::fstream file;
-
-    std::unordered_map<std::string, Section*>& sectionTable;
-    std::unordered_map<std::string, Symbol*>& symbolTable;
 
     uint32 readUint32();
     std::string readString();

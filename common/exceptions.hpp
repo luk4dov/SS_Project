@@ -54,5 +54,18 @@ public:
     }
 };
 
+class DivisionByZero : public std::exception {
+public:
+    DivisionByZero() {
+        std::cerr << "Error: division by zero\n";
+    }
+};
+
+class InvalidAddress : public std::exception {
+public:
+    InvalidAddress() {
+        std::cerr << "Error: Invalid address\n";
+    }
+};
 
 #endif

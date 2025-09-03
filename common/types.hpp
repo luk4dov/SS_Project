@@ -82,10 +82,11 @@ enum {
     RIGHT
 } typedef ShiftOC;
 
-enum {
+enum LoadStoreOC {
     REGULAR = 0,
-    STACK = 1,
-    CSR = 2
-} typedef LoadStoreOC;
+    STACK,
+    CSR
+};
+
 
 #endif

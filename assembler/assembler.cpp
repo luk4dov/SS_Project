@@ -189,7 +189,7 @@ int Assembler::assemble() {
 }
 
 void Assembler::write() {
-    BinaryRW* rw = new BinaryRW(sectionTable, symbolTable);
-    rw->write(std::string(outputFile));
+    BinaryRW* rw = new BinaryRW();
+    rw->write(std::string(outputFile), sectionTable, symbolTable);
     delete rw;
 }

@@ -13,6 +13,7 @@ public:
     static Instruction* binaryInstruction(int, int, int, int, int);
 
     int writeSectionData(Section*, std::unordered_map<std::string, Symbol*>&) override;
+    void execute(CPU*) override;
 
 private:
     int r1;
@@ -21,8 +22,9 @@ private:
     int disp;
     uint32 immediate;
     std::string label;
-    short type;
+    int type;
     LoadStoreOC op;
+    int mod;
 };
 
 #endif

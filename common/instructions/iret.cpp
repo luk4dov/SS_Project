@@ -16,3 +16,7 @@ int IretInstruction::writeSectionData(Section* section, std::unordered_map<std::
     write_binary(section, binary);
     return 8;
 }
+
+void IretInstruction::execute(CPU* cpu) {
+    return;
+}

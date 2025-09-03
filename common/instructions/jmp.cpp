@@ -62,3 +62,28 @@ int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::s
     write_binary(section, 0x0); // fill the memory for relocation with zeros 
     return 12;
 }
+
+void JmpInstruction::execute(CPU* cpu) {
+    uint32 newPc = r1 + disp;
+    
+    switch(cond) {
+        case (ALWAYS): break;
+        case (BGT) : {
+            if(r2 <= r3) return;
+            break;
+        }
+        case (BEQ) : {
+            if(r2 != r3) return;
+            break;
+        }
+        case (BNE) : {
+            if(r2 == r3) return;
+            break;
+        }
+    }
+
+    if(mod > 0xf) {
+        newPc = cpu->readMem(newPc);
+    }
+    cpu->setRegister(PC, newPc);
+}

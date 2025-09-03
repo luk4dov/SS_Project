@@ -4,7 +4,7 @@
 StoreInstruction::StoreInstruction(int r1, int r2, uint32 immediate, const std::string& label, int type, LoadStoreOC op) :
             Instruction("store"), r1(r1), r2(r2), immediate(immediate), label(label), type(type), op(op) {};
 
-StoreInstruction::StoreInstruction(int mod, int r1, int r2, int r3, int disp) : Instruction("store"), r1(r1), r2(r2), r3(r3), disp(disp) 
+StoreInstruction::StoreInstruction(int mod, int r1, int r2, int r3, int disp) : Instruction("store"), r1(r1), r2(r2), r3(r3), disp(disp), mod(mod) 
 {
     if(mod == 1) op = STACK;
     else op = REGULAR;
@@ -30,7 +30,7 @@ int StoreInstruction::writeSectionData(Section* section, std::unordered_map<std:
     
     switch(type) {
         case 0: { // STORE reg, $imm -> mem[imm] <= reg
-            if(immediate >= MIN_VAL && immediate <= MAX_VAL) {
+            if((int)immediate >= MIN_VAL && (int)immediate <= MAX_VAL) {
                 uint32 binary = serialize(STORE, 0, 0, 0, r1, immediate); // mem[imm] <= rs
                 write_binary(section, binary);
                 return 4;
@@ -66,11 +66,32 @@ int StoreInstruction::writeSectionData(Section* section, std::unordered_map<std:
             return 4;
         }
         case 3: { // STORE reg, [reg1+imm] -> mem[reg1+imm], reg
-            if(immediate < MIN_VAL || immediate > MAX_VAL) return -1;
+            if((int)immediate < MIN_VAL || (int)immediate > MAX_VAL) return -1;
             uint32 binary = serialize(STORE, 0, r2, 0, r1, immediate);
             write_binary(section, binary);
             return 4;
         }
     }
     return 0;
+}
+
+void StoreInstruction::execute(CPU* cpu) {
+    switch(op) {
+        case STACK: {
+            uint32 sp = cpu->getRegister(SP);
+            sp += disp;
+            cpu->writeMem(sp, r3);
+            cpu->setRegister(SP, sp);
+        }
+        case CSR: {
+            return;
+        }
+        case REGULAR: {
+            uint32 address = cpu->getRegister((REGS)r1) + cpu->getRegister((REGS)r2) + immediate;
+            if(mod == 2) {
+                address = static_cast<uint32>(cpu->readMem(address));
+            }
+            cpu->writeMem(address, r3);
+        }
+    }
 }

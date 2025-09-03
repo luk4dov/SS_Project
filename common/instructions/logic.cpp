@@ -25,3 +25,25 @@ int LogicInstruction::writeSectionData(Section* section, std::unordered_map<std:
     write_binary(section, binary);
     return 4;
 }
+
+void LogicInstruction::execute(CPU* cpu) {
+    if (r1 == 0) return;
+    
+    switch(mod) {
+        case AND: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) & cpu->getRegister((REGS)r3));
+            break;
+        }
+        case OR: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) | cpu->getRegister((REGS)r3));
+            break;
+        }
+        case XOR: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) ^ cpu->getRegister((REGS)r3));
+            break;
+        }
+        case NOT: {
+            cpu->setRegister((REGS)r1, ~cpu->getRegister((REGS)r2));
+        }
+    }
+}

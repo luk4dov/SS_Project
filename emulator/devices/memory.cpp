@@ -1,0 +1,33 @@
+#include "memory.hpp"
+
+Memory::Memory(const char* fileName) {
+    BinaryRW* rw = new BinaryRW();
+    mem = {};
+    rw -> readHex(fileName, mem);
+    delete rw;
+}
+
+Memory::~Memory() {
+    mem.clear();
+}
+
+int Memory::read(uint32 address) {
+    uint32 block = address >> 12;
+    uint32 word = address & 0xfff;
+
+    if (mem.find(block) != mem.end()) {
+        return 0;
+    }
+    return static_cast<int>(mem[block][word] | (mem[block][word + 1] << 8) | (mem[block][word + 2] << 16) | (mem[block][word + 3] << 24));
+}
+
+void Memory::write(uint32 address, uint32 value) {
+    uint32 block = address >> 12;
+    uint32 word = address & 0xfff;
+    
+    // little endian
+    mem[block][word] = value & 0xff;
+    mem[block][word + 1] = (value >> 8) & 0xff;
+    mem[block][word + 2] = (value >> 16) & 0xff;
+    mem[block][word + 3] = (value >> 24) & 0xff;
+}

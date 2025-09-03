@@ -64,6 +64,8 @@ uint32 Instruction::serialize(OperationCode op, short mn, short ra, short rb, sh
             (disp & 0xfff));
 }
 
+
+
 void Instruction::write_binary(Section* section, uint32 binary_data) {
     section->data.push_back(binary_data >> 24);
     section->data.push_back((binary_data >> 16) & 0xff);

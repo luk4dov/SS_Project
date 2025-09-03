@@ -15,3 +15,7 @@ int HaltInstruction::writeSectionData(Section* section, std::unordered_map<std::
     section->data.push_back(0x00);
     return 4;
 }
+
+void HaltInstruction::execute(CPU* cpu) {
+    cpu->halt();
+}

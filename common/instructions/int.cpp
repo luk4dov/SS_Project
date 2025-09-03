@@ -15,3 +15,18 @@ int IntInstruction::writeSectionData(Section* section, std::unordered_map<std::s
     section->data.push_back(0x00);
     return 4;
 }
+
+void IntInstruction::execute(CPU* cpu) {
+    // push status; push pc; cause <= 4; status <= status & ~(0x1); pc <= handle
+    
+    uint32 sp = cpu->getRegister(SP);
+    uint32 status = cpu->getCSR(STATUS);
+    uint32 pc = cpu->getRegister(PC);
+    cpu->writeMem(sp-4, status);
+    cpu->writeMem(sp-8, pc);
+    cpu->setRegister(SP, sp - 8);
+    cpu->setCSR(CAUSE, 4);
+    cpu->setCSR(STATUS, status & ~(0x1));
+    uint32 handle = cpu->getCSR(CSRREG::HANDLER);
+    cpu->setRegister(PC, handle);
+}

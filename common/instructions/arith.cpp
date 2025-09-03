@@ -24,3 +24,29 @@ int ArithInstruction::writeSectionData(Section* section, std::unordered_map<std:
     write_binary(section, binary);
     return 4;
 }
+
+void ArithInstruction::execute(CPU* cpu) {
+    // if destination register is 0, return 0 (r0 is always 0)
+    if(r1 == 0) return;
+
+    switch(mod) {
+        case ADD: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) + cpu->getRegister((REGS)r3));
+            break;
+        }
+        case SUB: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) - cpu->getRegister((REGS)r3));
+            break;
+        }
+        case MUL: {
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) * cpu->getRegister((REGS)r3));
+            break;
+        }
+        case DIV: {
+            if(cpu->getRegister((REGS)r3) == 0) {
+                throw DivisionByZero();
+            }
+            cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) / cpu->getRegister((REGS)r3));
+        }
+    }
+}

@@ -13,15 +13,14 @@ int Linker::link() {
     std::unordered_map<std::string, Section*> tempSectionTable = {};
     std::unordered_map<std::string, Symbol*> tempSymbolTable = {};
 
-    BinaryRW* rw = new BinaryRW(tempSectionTable, tempSymbolTable);
+    BinaryRW* rw = new BinaryRW();
     for(std::string file : inputFiles) {
-        rw->read(file);
+        rw->read(file, tempSectionTable, tempSymbolTable);
 
         std::unordered_map<std::string, uint32> sectionSize = {};
 
         // merge sections and symbols from temp tables into main table      
         for(auto& [tempSectionName, tempSection] : tempSectionTable) {
-
             if (sectionTable.find(tempSectionName) == sectionTable.end()) { // insert it as new section
                 sectionTable[tempSectionName] = tempSection; 
                 continue;
@@ -56,8 +55,10 @@ int Linker::link() {
                     throw SymbolMultipleDefinition(tempSymbolName);
                 }
             } else if(tempSymbol->defined) { // we found definition of symbol, update symbol table
+                Symbol* old = symbolTable[tempSymbolName];
                 symbolTable[tempSymbolName] = tempSymbol;
                 symbolTable[tempSymbolName]->offset += sectionTable[tempSymbol->section]->data.size() - tempSectionTable[tempSymbol->section]->data.size(); // adjust offset to the new section
+                delete old;
             }
         }
 
@@ -69,8 +70,8 @@ int Linker::link() {
 }
 
 int Linker::createRelocatable(std::string outputFile) {
-    BinaryRW* rw = new BinaryRW(sectionTable, symbolTable);
-    rw->write(outputFile);
+    BinaryRW* rw = new BinaryRW();
+    rw->write(outputFile, sectionTable, symbolTable);
     delete rw;
     return 0;
 }
@@ -82,9 +83,6 @@ int Linker::createExecutable(std::string outputFile) {
         }
     }
 
-    for(auto& [sectionName, section] : sectionTable) {
-        section->addr = maxSectionAddress + sectionTable[maxSectionName]->data.size();
-    }
     for(auto& [sectionName, startingAddress] : sectionAddress) {
         if(sectionTable.find(sectionName) == sectionTable.end()) {
             throw SectionNotFound(sectionName);
@@ -103,34 +101,35 @@ int Linker::createExecutable(std::string outputFile) {
             }
         }
     }
+
     // after checking overlaps, it's time to place other sections behind the one with the biggest address
     uint32 currentAddress = maxSectionAddress + sectionTable[maxSectionName]->data.size();
     for(auto& [sectionName, section] : sectionTable) {
-        if(sectionAddress.find(sectionName) != sectionAddress.end()) {
+        if(sectionAddress.find(sectionName) != sectionAddress.end()) { // it's placed by -place option
             continue;
         }
         section->addr = currentAddress;
         currentAddress += section->data.size();
     }
 
-        // resolve relocations
+    // resolve relocations
     for(const auto& [sectionName, section] : sectionTable) {
         for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
             uint32 symbolAddress = sectionTable[symbol->section]->addr + symbol->offset;
 
             for(uint32 offset : offsets) {
-                section->data[offset] += (symbolAddress >> 24) & 0xff;
-                section->data[offset+1] += (symbolAddress >> 16) & 0xff;
-                section->data[offset+2] += (symbolAddress >> 8) & 0xff;
-                section->data[offset+3] += symbolAddress & 0xff;
+                section->data[offset] += symbolAddress & 0xff;
+                section->data[offset+1] += (symbolAddress >> 8) & 0xff;
+                section->data[offset+2] += (symbolAddress >> 16) & 0xff;
+                section->data[offset+3] += (symbolAddress >> 24) & 0xff;
             }
         }
     }
 
     // write to binary file
-    BinaryRW* rw = new BinaryRW(sectionTable, symbolTable);
-    rw->writeHex(outputFile);
+    BinaryRW* rw = new BinaryRW();
+    rw->writeHex(outputFile, sectionTable);
     delete rw;
     return 0;
 }
