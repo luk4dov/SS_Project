@@ -13,12 +13,12 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
     uint32 binary;
     if(!label.empty()) { 
         Symbol* symbol = nullptr;
-        if(symbolTable.find(label) == symbolTable.end()) { // label not found -> put symbol in symbol table and create relocation entry;
-            symbolTable[label] = symbol = new Symbol(section->name, section->data.size());
+        if(symbolTable.find(label) == symbolTable.end()) { // label not found -> put symbol in symbol table
+            symbolTable[label] = symbol = new Symbol("UND", 0);
         }
         if(!symbol && symbolTable[label]->defined && symbolTable[label]->section == section->name) { // already in symbol table, check if it is defined in the same section
             // check if offset is less than 12 signed bits
-            if(section->data.size() - 0x7FF <= symbolTable[label]->offset) { // pc relative can be performed
+            if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
                 binary = serialize(CALL, 0, 15, 0, 0, section->data.size() - symbolTable[label]->offset);
                 write_binary(section, binary);
                 return 4;
@@ -34,6 +34,11 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
         return 12;
     }
     // if label is empty -> call immediate
+    if(immediate <= MAX_VAL) {
+        binary = serialize(CALL, 0, 0, 0, 0, immediate);
+        write_binary(section, binary);
+        return 4;
+    }
     binary = serialize(CALL, 1, 15, 0, 0, 4);
     write_binary(section, binary);
     binary = serialize(JMP, 0, 15, 0, 0, 4);

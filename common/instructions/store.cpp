@@ -29,7 +29,7 @@ int StoreInstruction::writeSectionData(Section* section, std::unordered_map<std:
     }
     
     switch(type) {
-        case 0: { // STORE reg, $imm -> mem[imm] <= reg
+        case 0: { // STORE reg, imm -> mem[imm] <= reg
             if((int)immediate >= MIN_VAL && (int)immediate <= MAX_VAL) {
                 uint32 binary = serialize(STORE, 0, 0, 0, r1, immediate); // mem[imm] <= rs
                 write_binary(section, binary);
@@ -44,7 +44,7 @@ int StoreInstruction::writeSectionData(Section* section, std::unordered_map<std:
         }
         case 1: { // STORE reg, sym -> mem[sym] <= reg
             if(symbolTable.find(label) == symbolTable.end()) {
-                symbolTable[label] = new Symbol(section->name, 0);
+                symbolTable[label] = new Symbol("UND", 0);
             }
             else if(symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < MAX_VAL) { // can be pc relative
                 uint32 binary = serialize(STORE, 0x0, 15, 0, r1, symbolTable[label]->offset - section->data.size()); // mem[pc + o - offset] <= rs
@@ -82,6 +82,7 @@ void StoreInstruction::execute(CPU* cpu) {
             sp += disp;
             cpu->writeMem(sp, r3);
             cpu->setRegister(SP, sp);
+            break;
         }
         case CSR: {
             return;

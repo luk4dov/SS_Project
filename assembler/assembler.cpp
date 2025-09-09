@@ -53,11 +53,7 @@ void Assembler::removeLocalSymbols() {
 void Assembler::selectInstruction(std::string instr, int reg1, int reg2, uint32 immediate, std::string label, int type) {
     Instruction* instruction = Instruction::parsedInstructions[instr](instr, reg1, reg2, immediate, label, type);
 
-    int ret = instruction->writeSectionData(sectionTable[section], symbolTable);
-    
-    if(ret == -1) {
-        throw LiteralNotIn12Bits(immediate);
-    }
+    instruction->writeSectionData(sectionTable[section], symbolTable);
 
     delete instruction;
 }
@@ -78,7 +74,7 @@ void Assembler::labelDefinition(std::string symbolName) {
 
 void Assembler::selectDirective(std::string directive, std::string name, uint32 immediate) {
     if(directive == "global" || directive == "extern")  {
-        
+    
         if(symbolTable.find(name) == symbolTable.end()) {
             symbolTable[name] = new Symbol("UND", 0, true, false);
         }
@@ -87,7 +83,7 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
     } else if(directive == "section") {
         
         if(sectionTable.find(name) == sectionTable.end()) {
-            sectionTable[name] = new Section(0, 0, name);
+            sectionTable[name] = new Section(0, name);
             symbolTable["." + name] = new Symbol(name, 0, true, true);
         }
         section = name; // change current section name
@@ -101,7 +97,7 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
         } else { // do reloc, it's easier
             // check if the symbol exists in symbolTable
             if(symbolTable.find(name) == symbolTable.end()) {
-                symbolTable[name] = new Symbol("UND", 0, false, false);   
+                symbolTable[name] = new Symbol("UND", 0);   
             }
             sectionTable[section]->reloc_table[name].push_back(sectionTable[section]->data.size());
             sectionTable[section]->data.push_back(0x00);
@@ -121,21 +117,19 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
             sectionTable[section]->data.push_back(c);
         }
         sectionTable[section]->data.push_back('\0');
-
-    } else if (directive == "end") {
-        removeLocalSymbols();
+    
     }
 }
 
 void Assembler::printStat() {
-    std::cout << "Symbol table: symbol  |  section  |  defined  |  bind \n";
+    std::cout << "Symbol table: symbol  |  section  |  offset  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
-        std::cout << symbolName << " | " << symbol->section << " | " << symbol->defined << " | " << symbol->global << '\n';
+        std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
     }
     std::cout << "------------------------------------------------------\n";
-    std::cout << "Section table: name  |  offset  |  size \n";
+    std::cout << "Section table: name  |  addr  |  size \n";
     for(auto [sectionName, section] : sectionTable) {
-        std::cout << sectionName << " | " << 0 << " | " << section->data.size() << '\n'; 
+        std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n'; 
     }
     std::cout << "------------------------------------------------------\n";
 
@@ -144,20 +138,20 @@ void Assembler::printStat() {
             if(section->reloc_table[symbolName].size() > 0) 
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
                 for(uint32 offset : section->reloc_table[symbolName]) {
-                    std::cout << offset << '\n';
+                    std::cout << std::hex << offset << '\n';
                 }
         }
     }
 
-    for(auto [sectionName, section] : sectionTable) {
-        for(int i = 0; i < section->data.size(); i += 4) {
-            uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
-            std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
-                                  << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
-                                  << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
-                                  << std::setw(2) << (binary_data & 0xff) << '\n';
-        }
-    }
+    // for(auto [sectionName, section] : sectionTable) {
+    //     for(int i = 0; i < section->data.size(); i += 4) {
+    //         uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
+    //         std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
+    //                               << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
+    //                               << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
+    //                               << std::setw(2) << (binary_data & 0xff) << '\n';
+    //     }
+    // }
     std::cout << "------------------------------------------------------\n";
 }
 
@@ -167,6 +161,8 @@ int Assembler::assemble() {
     try {
         int ret = yyparse();
 
+        removeLocalSymbols();
+        
         write();
 
         return ret;

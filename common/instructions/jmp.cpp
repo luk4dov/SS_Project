@@ -27,27 +27,27 @@ Instruction* JmpInstruction::binaryInstruction(int mod, int r1, int r2, int r3, 
 int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     uint32 binary = 0;
     if(type == 0) { // jmp imm;
-        if (immediate <= 0x7ff) {
+        if (immediate <= MAX_VAL) {
             uint32 binary = serialize(JMP, cond, 0, r1, r2, immediate);
             write_binary(section, binary);
             return 4;
-        } else { // jmp trick
-            binary = serialize(JMP, 0x8+cond, 15, r1, r2, 0x4);             // memory:
-            write_binary(section, binary);                                  //    i  : jmp [pc+4]
-            binary = serialize(JMP, 0, 15, 0, 0, 0x4);                 //   i+4 : jmp 4
-            write_binary(section, binary);                                  //   i+8 : immediate
-            write_binary(section, immediate);                               //   i+12: next instruction...
-            return 12;
         }
+        // jmp trick
+        binary = serialize(JMP, 0x8+cond, 15, r1, r2, 0x4);             // memory:
+        write_binary(section, binary);                                  //    i  : jmp [pc+4]
+        binary = serialize(JMP, 0, 15, 0, 0, 0x4);                      //   i+4 : jmp 4
+        write_binary(section, binary);                                  //   i+8 : immediate
+        write_binary(section, immediate);                               //   i+12: next instruction...
+        return 12;
     }
     // jmp symbol
     Symbol* symbol = nullptr;
     if(symbolTable.find(label) == symbolTable.end()) {
-        symbolTable[label] = symbol = new Symbol(section->name, section->data.size());
+        symbolTable[label] = symbol = new Symbol("UND", 0);
     }
     if(!symbol && symbolTable[label]->defined && symbolTable[label]->section == section->name) { // already in symbol table, check if it is defined in the same section
             // check if offset is less than 12 signed bits
-            if(section->data.size() - 0x7FF <= symbolTable[label]->offset) { // pc relative can be performed
+            if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
                 binary = serialize(JMP, cond, 15, r1, r2, section->data.size() - symbolTable[label]->offset); // jmp pc - ofset
                 write_binary(section, binary);
                 return 4;
@@ -64,7 +64,7 @@ int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::s
 }
 
 void JmpInstruction::execute(CPU* cpu) {
-    uint32 newPc = r1 + disp;
+    uint32 newPc = cpu->getRegister(REGS(r1)) + disp;
     
     switch(cond) {
         case (ALWAYS): break;
@@ -85,5 +85,5 @@ void JmpInstruction::execute(CPU* cpu) {
     if(mod > 0xf) {
         newPc = cpu->readMem(newPc);
     }
-    cpu->setRegister(PC, newPc);
+    cpu->setRegister(PC, (uint32)newPc);
 }

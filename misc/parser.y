@@ -26,7 +26,8 @@
 
 %token EXTERN GLOBAL SECTION WORD END ASCII SKIP
 %token LD ST PUSH POP XCHG
-%token ADD SUB MUL DIV NOT AND OR XOR
+%token ADD SUB MUL DIV 
+%token NOT AND OR XOR
 %token SHL SHR
 %token JMP BEQ BNE BGT CALL RET IRET HALT INT
 %token CSRRD CSRWR
@@ -58,7 +59,7 @@ directive:
 |   WORD word_identifier_list
 |   SKIP NUMBER { selectDirective("skip", "", $2); }
 |   ASCII string { selectDirective("ascii", $2, 0); }
-|   END { selectDirective("end", "", 0); return 0; };
+|   END { return 0; };
 
 
 extern_identifier_list:

@@ -41,7 +41,7 @@ public:
 
 class Section {
 public:
-    Section(uint32 addr, uint32 offset, std::string name) : addr(addr), name(name) { reloc_table = {}; data = {}; }
+    Section(uint32 addr, std::string name) : addr(addr), name(name) { reloc_table = {}; data = {}; }
     ~Section() = default;
 
     uint32 addr;

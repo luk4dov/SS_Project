@@ -5,16 +5,14 @@ LoadInstruction::LoadInstruction(int r1, int r2, uint32 immediate, const std::st
 
 LoadInstruction::LoadInstruction(int mod, int r1, int r2, int r3, int disp) : Instruction("load"), r1(r1), r2(r2), r3(r3), disp(disp), mod(mod) {
     if(mod < 3) op = LoadStoreOC::REGULAR;
-    else if (mod == 4) op = LoadStoreOC::STACK;
+    else if (mod == 3) op = LoadStoreOC::STACK;
     else op = LoadStoreOC::CSR;
 };
 
 Instruction* LoadInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
-    LoadStoreOC op = LoadStoreOC::REGULAR;
     if(instr == "ret") {
         return new LoadInstruction(15, 14, 0, "", 0, LoadStoreOC::STACK);
-    }
-    else if(instr == "pop") {
+    } else if(instr == "pop") {
         return new LoadInstruction(r1, 14, 0, "", 0, LoadStoreOC::STACK);
     } else if(instr == "csrrd" || instr == "csrwr") {
         if(label == "%status") {
@@ -27,9 +25,12 @@ Instruction* LoadInstruction::parsedInstruction(const std::string& instr, int r1
             r2 = CAUSE;
         }
 
-        return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::CSR);
+        if(instr == "csrrd")
+            return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::CSR);
+        else 
+            return new LoadInstruction(r2, r1, 0, instr, 0, LoadStoreOC::CSR);
     }
-    return new LoadInstruction(r1, r2, immediate, label, type, op);
+    return new LoadInstruction(r1, r2, immediate, label, type, LoadStoreOC::REGULAR);
 }
 
 Instruction* LoadInstruction::binaryInstruction(int mod, int r1, int r2, int r3, int disp) {
@@ -44,8 +45,10 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
     } else if(op == LoadStoreOC::CSR) {
         uint32 binary;
         if(label == "csrwr") {
-            binary = serialize(LOAD, 4, r2, r1, 0, 0); // csr[r1] <= r2
+            std::cout << "csrwr instruction\n";
+            binary = serialize(LOAD, 4, r1, r2, 0, 0); // csr[r1] <= r2
         } else if(label == "csrrd") {
+            std::cout << "csrrd instruction\n";
             binary = serialize(LOAD, 0, r1, r2, 0, 0); // r1 <= csr[r2]
         }
         write_binary(section, binary);
@@ -54,11 +57,11 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
     
     switch(type) {
         case 0: { // LOAD $imm, reg -> reg <= imm -> jmp trick
-            if((int)immediate > MIN_VAL && (int)immediate < MAX_VAL) {
-                uint32 binary = serialize(LOAD, 1, r1, 0, 0, immediate); // ra <= mem[rb+rc+disp] = reg <= mem[r0 + 0 + imm];
-                write_binary(section, binary);
-                return 4;
-            }
+            // if((int)immediate > MIN_VAL && (int)immediate < MAX_VAL) {
+            //     uint32 binary = serialize(LOAD, 1, r1, 0, 0, immediate); // ra <= mem[rb+rc+disp] = reg <= mem[r0 + 0 + imm];
+            //     write_binary(section, binary);
+            //     return 4;
+            // }
             uint32 binary = serialize(LOAD, 2, r1, 15, 0, 4); // -> load rd, [pc+0+4]       //  i :  load rd, [pc+r0+4]
             write_binary(section, binary);                                                  //  i+4: jmp pc+4
             binary = serialize(JMP, 0, 15, 0, 0, 4);                                        //  i+8  immediate
@@ -68,7 +71,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
         }
         case 1: { // LD $sym, reg -> reg <= sym   
             if(symbolTable.find(label) == symbolTable.end()) {
-                symbolTable[label] = new Symbol(section->name, 0);
+                symbolTable[label] = new Symbol("UND", 0);
             }
             else if(symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < 0x7ff) { // can be pc relative
                 uint32 binary = serialize(LOAD, 2, r1, 15, 0, symbolTable[label]->offset - section->data.size()); // ra <= mem[rb+rc+disp] = reg <= mem[pc + 0 + (-offset)];
@@ -101,7 +104,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
         }
         case 3: { // LD sym, reg -> reg <= mem[sym]
             if(symbolTable.find(label) == symbolTable.end()) {
-                symbolTable[label] = new Symbol(section->name, 0);
+                symbolTable[label] = new Symbol("UND", 0);
             }
             else if(symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < 0x7ff) { // can be pc relative
                 uint32 binary = serialize(LOAD, 0x2, r1, 15, 0, symbolTable[label]->offset - section->data.size()); // ra <= mem[rb+rc+disp] = reg <= mem[pc + 0 + (-offset)];
@@ -129,7 +132,9 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             return 4;
         }
         case 6: { // LD [%reg+imm], reg -> mem[%reg + imm]
-            if((int)immediate > MAX_VAL || (int)immediate < MIN_VAL) return -1;
+            if((int)immediate > MAX_VAL || (int)immediate < MIN_VAL) {
+                throw LiteralNotIn12Bits(immediate);
+            }
 
             uint32 binary = serialize(LOAD, 0x2, r1, r2, 0, immediate);
             write_binary(section, binary);
@@ -165,7 +170,7 @@ void LoadInstruction::execute(CPU* cpu) {
             if(mod == 4) { // csr[r1] <= r2
                 int val = cpu->getRegister(REGS(r2));
                 cpu->setCSR(CSRREG(r1), val);
-            } else { // csr[1] <= mem[r2] ---> pop csr
+            } else { // r1 <= csr[r2]
                 uint32 address = cpu->getRegister(REGS(r2));
                 if(address < 0) {
                     throw InvalidAddress();
@@ -174,7 +179,6 @@ void LoadInstruction::execute(CPU* cpu) {
                 cpu->setCSR(CSRREG(r1), val);
                 cpu->setRegister(REGS(r1), address + disp);
             }
-            break;
         }
     }
 }

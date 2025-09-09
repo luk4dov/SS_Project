@@ -4,8 +4,6 @@
 #include "types.hpp"
 #include "exceptions.hpp"
 #include "../emulator/devices/cpu.hpp"
-// Forward declaration to avoid circular dependency with emulator CPU
-// class CPU;
 
 class Instruction {
 public:    

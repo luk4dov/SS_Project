@@ -19,9 +19,6 @@ public:
     void selectInstruction(std::string, int, int, uint32, std::string, int);
     void labelDefinition(std::string);
     void selectDirective(std::string, std::string, uint32);
-
-    void printStat();
-    
 private:
 
     const char* inputFile;
@@ -32,6 +29,7 @@ private:
     std::unordered_map<std::string, Symbol*> symbolTable;
 
     void removeLocalSymbols();
+    void printStat();
 };
 
 #endif

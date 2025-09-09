@@ -40,7 +40,7 @@ void BinaryRW::read(std::string fileName, std::unordered_map<std::string, Sectio
             sectionData.push_back(readByte());
         }
 
-        sectionTable[section] = new Section(addr, 0, section);
+        sectionTable[section] = new Section(addr, section);
         sectionTable[section]->reloc_table = relocTable;
         sectionTable[section]->data = sectionData;
     }
@@ -170,7 +170,8 @@ void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Se
             }
         }
     }
-    std::fstream file = std::fstream("program.txt", std::ios::out | std::ios::trunc);
+    
+    file = std::fstream("program.txt", std::ios::out | std::ios::trunc);
     for(auto [sectionName, section] : sectionTable) {
         uint32 addr = section->addr;
         
@@ -189,25 +190,35 @@ void BinaryRW::writeHex(std::string fileName, std::unordered_map<std::string, Se
 }
 
 void BinaryRW::readHex(std::string fileName, std::unordered_map<uint32, std::vector<uchar>>& mem) {
-    std::fstream file = std::fstream(fileName, std::ios::in | std::ios::binary);
+    file = std::fstream(fileName, std::ios::in | std::ios::binary);
 
     uint32 numOfSections = readUint32();
+
+    // std::cout << "Number of sections: " << numOfSections << '\n';
 
     for(uint32 i = 0; i < numOfSections; ++i) {
         uint32 addr = readUint32();
         uint32 size = readUint32();
-        
+
+        // std::cout << "Section " << i << " address: " << std::hex << addr << " size: " << std::dec << size << '\n';
+
         // 32 bits for address -> 20 bits for block and 12 for word
         for(uint32 blockAddress = addr; blockAddress < addr + size;) {
-            uint32 block = blockAddress >> 20;
+            uint32 block = blockAddress >> 12;
+
+            // std::cout << "Block: " << std::hex << block << '\n';
+
             mem[block] = std::vector<uchar>(1<<12, 0);
 
-            for(uint32 word = 0; word < (1 << 12) && (block << 20 | word) < addr + size; ++word) {
+            for(uint32 word = blockAddress & 0xfff; word < (1 << 12) && (block << 12 | word) < addr + size * sizeof(uchar); ++word) {
                 mem[block][word] = readByte();
             }
             
             blockAddress += (1 << 12);
         }
     }
+
+    // std::cout << "Memory loaded from hex file.\n";
+    
     file.close();
 }

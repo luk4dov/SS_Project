@@ -102,7 +102,7 @@ int Linker::createExecutable(std::string outputFile) {
         }
     }
 
-    // after checking overlaps, it's time to place other sections behind the one with the biggest address
+    // after checking overlaps, it's time to place remaining sections behind the one with the biggest address
     uint32 currentAddress = maxSectionAddress + sectionTable[maxSectionName]->data.size();
     for(auto& [sectionName, section] : sectionTable) {
         if(sectionAddress.find(sectionName) != sectionAddress.end()) { // it's placed by -place option
@@ -123,7 +123,7 @@ int Linker::createExecutable(std::string outputFile) {
                                  ((section->data[offset+1] & 0xff) << 8) | 
                                  ((section->data[offset+2] & 0xff) << 16) | 
                                  ((section->data[offset+3] & 0xff) << 24);
-                
+
                 section->data[offset] = (symbolAddress + addend) & 0xff;
                 section->data[offset+1] = ((symbolAddress + addend) >> 8) & 0xff;
                 section->data[offset+2] = ((symbolAddress + addend) >> 16) & 0xff;
@@ -159,14 +159,14 @@ int Linker::linkAndCreateOutput() {
 }
 
 void Linker::printStat() {
-    std::cout << "Symbol table: symbol  |  section  |  defined  |  bind \n";
+    std::cout << "Symbol table: symbol  |  section  |  offset  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
-        std::cout << symbolName << " | " << symbol->section << " | " << symbol->defined << " | " << symbol->global << '\n';
+        std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
     }
     std::cout << "------------------------------------------------------\n";
-    std::cout << "Section table: name  |  offset  |  size \n";
+    std::cout << "Section table: name  |  addr  |  size \n";
     for(auto [sectionName, section] : sectionTable) {
-        std::cout << sectionName << " | " << 0 << " | " << section->data.size() << '\n'; 
+        std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n'; 
     }
     std::cout << "------------------------------------------------------\n";
 
@@ -181,23 +181,13 @@ void Linker::printStat() {
     }
 
     // for(auto [sectionName, section] : sectionTable) {
-    //     if(section->reloc_table.size() > 0) {
-    //         std::cout << "reloc table for section " << sectionName << " in section " << sectionName << '\n';
-    //         for(uint32 offset : section->reloc_table[sectionName]) {
-    //             std::cout << offset << '\n';
-    //         }
+    //     for(int i = 0; i < section->data.size(); i += 4) {
+    //         uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
+    //         std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
+    //                               << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
+    //                               << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
+    //                               << std::setw(2) << (binary_data & 0xff) << '\n';
     //     }
     // }
-
-
-    for(auto [sectionName, section] : sectionTable) {
-        for(int i = 0; i < section->data.size(); i += 4) {
-            uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
-            std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
-                                  << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
-                                  << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
-                                  << std::setw(2) << (binary_data & 0xff) << '\n';
-        }
-    }
     std::cout << "------------------------------------------------------\n";
 }

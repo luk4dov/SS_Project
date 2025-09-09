@@ -86,7 +86,7 @@ $(BUILD)/asm/%.o: $(DIRECTORY_ASM)/%.cpp | $(BUILD)/asm
 $(BUILD)/linker/%.o: $(DIRECTORY_LINKER)/%.cpp | $(BUILD)/linker
 	$(GPP) -c $< -Icommon -o $@
 $(BUILD)/emulator/%.o: $(DIRECTORY_EMULATOR)/%.cpp | $(BUILD)/emulator
-	$(GPP) -c $< -Icommon -o $@it 
+	$(GPP) -c $< -Icommon -o $@
 
 $(BUILD)/asm/%.o: $(COMMON)/%.cpp | $(BUILD)/asm
 	$(GPP) -c $< -Icommon -o $@

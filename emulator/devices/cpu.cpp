@@ -1,23 +1,29 @@
 #include "cpu.hpp"
 #include "../../common/instruction.hpp"
 
-CPU::CPU() : halt(false) {
+CPU::CPU(Memory* memory) : halt(false), memory(memory) {
     reset();
+}
+
+CPU::~CPU() {
+    delete memory;
 }
 
 void CPU::reset() {
     for (int i = 0; i < 15; i++) {
         registers[i] = 0;
     }
-    registers[15] = 0x40000000; // pc
-    csr[0] = 0; // status
-    csr[1] = 0; // handler
-    csr[2] = 0; // cause
+    registers[PC] = 0x40000000;
+    registers[SP] = 0xffffff00; // stack pointer initialized to the end of memory
+    csr[CSRREG::STATUS] = 0;
+    csr[CSRREG::HANDLER] = 0;
+    csr[CSRREG::CAUSE] = 0;
 }
 
 void CPU::executeInstruction() {
-    uint32 instruction = static_cast<uint32>(memory->read(registers[15]));
-    registers[15] += 4; // Increment PC
+    
+    uint32 instruction = static_cast<uint32>(memory->read(registers[PC]));
+    registers[PC] += 4; // Increment PC
 
     OperationCode op = static_cast<OperationCode>(instruction >> 28);
     int mod = (instruction >> 24) & 0xf;
@@ -27,6 +33,9 @@ void CPU::executeInstruction() {
     int disp = instruction & 0xfff;
 
     Instruction* instr = Instruction::binaryInstructions[op](mod, ra, rb, rc, disp);
+
+    std::cout << "PC: " << std::hex << getRegister(PC)-4 << ": Executing " << mnemonics[op] << " instruction\n";
+
     instr -> execute(this);
 
     delete instr;
