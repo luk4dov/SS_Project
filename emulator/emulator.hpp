@@ -13,6 +13,7 @@ public:
     int emulate();
 
 private:
+
     std::unordered_map<uint32, std::vector<uchar>> mem;
 
     CPU* cpu;

@@ -43,25 +43,21 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
         write_binary(section, binary);
         return 4;
     } else if(op == LoadStoreOC::CSR) {
-        uint32 binary;
-        if(label == "csrwr") {
-            std::cout << "csrwr instruction\n";
-            binary = serialize(LOAD, 4, r1, r2, 0, 0); // csr[r1] <= r2
-        } else if(label == "csrrd") {
-            std::cout << "csrrd instruction\n";
-            binary = serialize(LOAD, 0, r1, r2, 0, 0); // r1 <= csr[r2]
-        }
+        uint32 binary = serialize(LOAD, 4, r1, r2, 0, 0); // csr[r1] <= r2
+        write_binary(section, binary);
+        return 4;
+    } else if (op == LoadStoreOC::REGULAR && label == "csrrd") {
+        uint32 binary = serialize(LOAD, 0, r1, r2, 0, 0); // r1 <= csr[r2]
         write_binary(section, binary);
         return 4;
     }
-    
     switch(type) {
         case 0: { // LOAD $imm, reg -> reg <= imm -> jmp trick
-            // if((int)immediate > MIN_VAL && (int)immediate < MAX_VAL) {
-            //     uint32 binary = serialize(LOAD, 1, r1, 0, 0, immediate); // ra <= mem[rb+rc+disp] = reg <= mem[r0 + 0 + imm];
-            //     write_binary(section, binary);
-            //     return 4;
-            // }
+            if((int)immediate > MIN_VAL && (int)immediate < MAX_VAL) {
+                uint32 binary = serialize(LOAD, 1, r1, 0, 0, immediate); // ra <= mem[rb+rc+disp] = reg <= mem[r0 + 0 + imm];
+                write_binary(section, binary);
+                return 4;
+            }
             uint32 binary = serialize(LOAD, 2, r1, 15, 0, 4); // -> load rd, [pc+0+4]       //  i :  load rd, [pc+r0+4]
             write_binary(section, binary);                                                  //  i+4: jmp pc+4
             binary = serialize(JMP, 0, 15, 0, 0, 4);                                        //  i+8  immediate
@@ -160,10 +156,10 @@ void LoadInstruction::execute(CPU* cpu) {
             break;
         }
         case LoadStoreOC::STACK: {
-            int address = cpu->getRegister(REGS(r2));
-            int val = cpu -> readMem(address);
+            int sp = cpu->getRegister(REGS(r2));
+            int val = cpu -> readMem(sp);
             cpu -> setRegister(REGS(r1), val);
-            cpu -> setRegister(REGS(r2), address + disp);
+            cpu -> setRegister(REGS(r2), sp + disp);
             break;
         }
         case LoadStoreOC::CSR: {
@@ -172,15 +168,13 @@ void LoadInstruction::execute(CPU* cpu) {
                 cpu->setCSR(CSRREG(r1), val);
             } else { // r1 <= csr[r2]
                 int val = cpu->getRegister(REGS(r2)) + cpu->getRegister(REGS(r3)) + disp;
-                if (mod == 7)
-                {
+                if (mod == 7) { // pop csr
                     cpu->setRegister(REGS(r2), val);
                 }
                 if(mod == 6) { // r1 <= mem[val] 
                     val = cpu->readMem((uint32)val);
                 }
                 cpu->setCSR(CSRREG(r1), val);
-                
             }
         }
     }

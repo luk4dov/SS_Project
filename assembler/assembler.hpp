@@ -8,7 +8,7 @@
 class Assembler {
 public: 
     Assembler(const char* inputFile, const char* outputFile) : inputFile(inputFile), outputFile(outputFile), section("") { 
-        sectionTable = {}; symbolTable = {}; 
+        sectionTable = {}; symbolTable = {}; rw = new BinaryRW();
     }
 
     ~Assembler();
@@ -20,6 +20,8 @@ public:
     void labelDefinition(std::string);
     void selectDirective(std::string, std::string, uint32);
 private:
+
+    BinaryRW* rw;
 
     const char* inputFile;
     const char* outputFile;

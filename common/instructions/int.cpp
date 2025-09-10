@@ -9,16 +9,12 @@ Instruction* IntInstruction::binaryInstruction(int mod, int reg1, int reg2, int 
 }
 
 int IntInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
-    section->data.push_back(0x00);
-    section->data.push_back(0x00);
-    section->data.push_back(0x00);
-    section->data.push_back(0x10);
+    write_binary(section, 0x10000000);
     return 4;
 }
 
 void IntInstruction::execute(CPU* cpu) {
     // push status; push pc; cause <= 4; status <= status & ~(0x1); pc <= handle
-
     uint32 sp = cpu->getRegister(SP);
     uint32 status = cpu->getCSR(STATUS);
     uint32 pc = cpu->getRegister(PC);

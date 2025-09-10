@@ -1,10 +1,9 @@
 #include "memory.hpp"
 
 Memory::Memory(const char* fileName) {
-    BinaryRW* rw = new BinaryRW();
+    rw = new BinaryRW();
     mem = {};
     rw -> readHex(std::string(fileName), mem);
-    delete rw;
 }
 
 int Memory::read(uint32 address) {

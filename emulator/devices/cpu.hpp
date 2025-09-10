@@ -6,7 +6,6 @@
 
 static std::vector<std::string> mnemonics = {"HALT", "INT", "CALL", "JMP", "XCHG", "ARITH", "LOGIC", "SHIFT", "STORE", "LOAD" }; 
 enum {R0 = 0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, SP, PC} typedef REGS;
-// enum {CAUSE = 0, HANDLE, STATUS} typedef CSR;
 
 class CPU {
 public:
@@ -29,6 +28,8 @@ public:
     void writeMem(uint32 address, int data) { memory->write(address, data); }
     uint32 readMem(uint32 address) { return memory->read(address); }
 
+    void printContext();
+
 private:
     bool halt;
 
@@ -37,7 +38,6 @@ private:
     
     Memory* memory;
 
-    
 };
 
 #endif

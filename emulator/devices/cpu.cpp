@@ -34,8 +34,6 @@ void CPU::executeInstruction() {
 
     Instruction* instr = Instruction::binaryInstructions[op](mod, ra, rb, rc, disp);
 
-    std::cout << "PC: " << std::hex << getRegister(PC)-4 << ": Executing " << mnemonics[op] << " instruction\n";
-
     instr -> execute(this);
 
     delete instr;
@@ -43,4 +41,29 @@ void CPU::executeInstruction() {
 
 void CPU::handleInterrupt() {
     // TODO: Implementation of interrupt handling 
+}
+
+void CPU::printContext() {
+    std::cout << "---------------------------------------------------------------\n";
+    std::cout << "Emulated processor executed halt instruction\n";
+    std::cout << "Emulated processor state:\n";
+
+    auto printReg = [&](int idx) {
+        std::string label = "r" + std::to_string(idx);
+        int pad = 3 - static_cast<int>(label.size());
+        if (pad < 0) pad = 0;
+        std::cout << label << std::string(pad, ' ') << "= "
+                  << "0x" << std::hex << std::setw(8) << std::setfill('0')
+                  << static_cast<uint32>(registers[idx])
+                  << std::dec << std::setfill(' ');
+    };
+
+    for (int row = 0; row < 4; ++row) {
+        for (int col = 0; col < 4; ++col) {
+            int idx = row * 4 + col;
+            printReg(idx);
+            if (col != 3) std::cout << ' ';
+        }
+        std::cout << "\n";
+    }
 }

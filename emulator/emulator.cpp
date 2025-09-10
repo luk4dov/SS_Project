@@ -14,5 +14,7 @@ int Emulator::emulate() {
     while(!cpu->getHalt()) {    
         cpu->executeInstruction();
     }
+
+    cpu->printContext();
     return 0;
 }

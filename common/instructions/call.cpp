@@ -16,6 +16,7 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
         if(symbolTable.find(label) == symbolTable.end()) { // label not found -> put symbol in symbol table
             symbolTable[label] = symbol = new Symbol("UND", 0);
         }
+        
         if(!symbol && symbolTable[label]->defined && symbolTable[label]->section == section->name) { // already in symbol table, check if it is defined in the same section
             // check if offset is less than 12 signed bits
             if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
@@ -51,12 +52,14 @@ void CallInstruction::execute(CPU* cpu) {
     uint32 sp = cpu->getRegister(SP);
     uint32 pc = cpu->getRegister(PC);
 
-    cpu->setRegister(SP, sp - 4);
     cpu->writeMem(sp - 4, pc);
+    cpu->setRegister(SP, sp - 4);
 
     uint32 address = cpu->getRegister(REGS(r1)) + cpu->getRegister(REGS(r2)) + disp;
+    
     if(mod == 1) {
         address = cpu->readMem(address);
     }
+    
     cpu->setRegister(PC, address);
 }

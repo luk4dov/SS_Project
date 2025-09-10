@@ -85,5 +85,6 @@ void JmpInstruction::execute(CPU* cpu) {
     if(mod > 0x7) { // indirect jump
         newPc = cpu->readMem(newPc);
     }
+    
     cpu->setRegister(PC, (uint32)newPc);
 }

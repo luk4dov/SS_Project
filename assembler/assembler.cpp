@@ -107,7 +107,7 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
         }
     
     } else if (directive == "skip") {
-        for(int i = 0; i < immediate; ++i) {
+        for(uint32 i = 0; i < immediate; ++i) {
             sectionTable[section]->data.push_back(0x00);
         }
 
@@ -127,6 +127,7 @@ void Assembler::printStat() {
         std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
     }
     std::cout << "------------------------------------------------------\n";
+    
     std::cout << "Section table: name  |  addr  |  size \n";
     for(auto [sectionName, section] : sectionTable) {
         std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n'; 
@@ -135,23 +136,14 @@ void Assembler::printStat() {
 
     for(auto [symbolName, symbol] : symbolTable) {
         for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table[symbolName].size() > 0) 
+            if(section->reloc_table[symbolName].size() > 0) {
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
                 for(uint32 offset : section->reloc_table[symbolName]) {
                     std::cout << std::hex << offset << '\n';
                 }
+            }
         }
     }
-
-    // for(auto [sectionName, section] : sectionTable) {
-    //     for(int i = 0; i < section->data.size(); i += 4) {
-    //         uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
-    //         std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
-    //                               << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
-    //                               << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
-    //                               << std::setw(2) << (binary_data & 0xff) << '\n';
-    //     }
-    // }
     std::cout << "------------------------------------------------------\n";
 }
 
@@ -167,13 +159,11 @@ int Assembler::assemble() {
 
         return ret;
     }
-    catch (LiteralNotIn12Bits e) { return -1; }
-    catch (LocalSymbolNotDefined e) { return -2; }
-    catch (SymbolRedefinition e) { return -3; }
+    catch (LiteralNotIn12Bits &e) { return -1; }
+    catch (LocalSymbolNotDefined &e) { return -2; }
+    catch (SymbolRedefinition &e) { return -3; }
 }
 
 void Assembler::write() {
-    BinaryRW* rw = new BinaryRW();
     rw->write(std::string(outputFile), sectionTable, symbolTable);
-    delete rw;
 }

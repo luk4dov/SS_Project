@@ -9,12 +9,12 @@ public:
     BinaryRW() {}
     ~BinaryRW() {}
 
-    void read(std::string, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable);
-    void write(std::string, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable);
+    void read(const std::string&, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable);
+    void write(const std::string&, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable);
 
 
-    void writeHex(std::string, std::unordered_map<std::string, Section*>&, uint32);
-    void readHex(std::string, std::unordered_map<uint32, std::vector<uchar>>&);
+    void writeHex(const std::string&, std::unordered_map<std::string, Section*>&, uint32);
+    void readHex(const std::string&, std::unordered_map<uint32, std::vector<uchar>>&);
 
 private:
     std::fstream file;

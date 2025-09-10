@@ -6,13 +6,16 @@
 
 class Memory {
 public:
+    
     Memory(const char*);
 
     int read(uint32 address);
-
     void write(uint32 address, int value);
 
 private:
+    
+    BinaryRW* rw;
+
     std::unordered_map<uint32, std::vector<uchar>> mem;
 };
 

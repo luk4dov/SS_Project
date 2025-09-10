@@ -9,10 +9,7 @@ Instruction* HaltInstruction::binaryInstruction(int mod, int reg1, int reg2, int
 }
 
 int HaltInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
-    section->data.push_back(0x00);
-    section->data.push_back(0x00);
-    section->data.push_back(0x00);
-    section->data.push_back(0x00);
+    write_binary(section, 0x0);
     return 4;
 }
 

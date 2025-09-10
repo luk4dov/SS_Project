@@ -88,5 +88,4 @@ enum LoadStoreOC {
     CSR
 };
 
-
 #endif

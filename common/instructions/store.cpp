@@ -79,7 +79,7 @@ void StoreInstruction::execute(CPU* cpu) {
     switch(op) {
         case STACK: {
             uint32 sp = cpu->getRegister(REGS(r1));
-            uint32 val = cpu->getRegister(REGS(r3));
+            int val = cpu->getRegister(REGS(r3));
             sp += disp;
             cpu->writeMem(sp, val);
             cpu->setRegister(REGS(r1), sp);
@@ -90,9 +90,9 @@ void StoreInstruction::execute(CPU* cpu) {
         }
         case REGULAR: {
             uint32 address = cpu->getRegister((REGS)r1) + cpu->getRegister((REGS)r2) + disp;
-            uint32 val = cpu->getRegister((REGS)r3);
+            int val = cpu->getRegister((REGS)r3);
             if(mod == 2) {
-                address = static_cast<uint32>(cpu->readMem(address));
+                address = cpu->readMem(address);
             }
             cpu->writeMem(address, val);
         }

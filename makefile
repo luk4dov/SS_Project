@@ -23,8 +23,6 @@ linker: $(LINKER_TARGET)
 emulator: $(EMULATOR_TARGET)
 
 
-
-
 ASM_SRCS = $(wildcard $(DIRECTORY_ASM)/*.cpp)
 ASM_HEADERS = $(wildcard $(DIRECTORY_ASM)/*.hpp)
 ASM_OBJS = $(patsubst $(DIRECTORY_ASM)/%.cpp, $(BUILD)/asm/%.o, $(ASM_SRCS))

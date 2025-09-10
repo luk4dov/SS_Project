@@ -13,7 +13,6 @@ int Linker::link() {
     std::unordered_map<std::string, Section*> tempSectionTable = {};
     std::unordered_map<std::string, Symbol*> tempSymbolTable = {};
 
-    BinaryRW* rw = new BinaryRW();
     for(std::string file : inputFiles) {
         rw->read(file, tempSectionTable, tempSymbolTable);
 
@@ -70,9 +69,7 @@ int Linker::link() {
 }
 
 int Linker::createRelocatable(std::string outputFile) {
-    BinaryRW* rw = new BinaryRW();
     rw->write(outputFile, sectionTable, symbolTable);
-    delete rw;
     return 0;
 }
 
@@ -133,9 +130,7 @@ int Linker::createExecutable(std::string outputFile) {
     }
 
     // write to binary file
-    BinaryRW* rw = new BinaryRW();
     rw->writeHex(outputFile, sectionTable, maxSectionAddress);
-    delete rw;
     return 0;
 }
 
@@ -152,10 +147,10 @@ int Linker::linkAndCreateOutput() {
 
         return 0;
     }
-    catch (SymbolNotDefined e) { return -12; }
-    catch (SectionNotFound e) { return -13; }
-    catch (SectionOverlap e) { return -14; }
-    catch (SymbolMultipleDefinition e) { return -15; }
+    catch (SymbolNotDefined& e) { return -12; }
+    catch (SectionNotFound& e) { return -13; }
+    catch (SectionOverlap& e) { return -14; }
+    catch (SymbolMultipleDefinition& e) { return -15; }
 }
 
 void Linker::printStat() {
@@ -164,6 +159,7 @@ void Linker::printStat() {
         std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
     }
     std::cout << "------------------------------------------------------\n";
+    
     std::cout << "Section table: name  |  addr  |  size \n";
     for(auto [sectionName, section] : sectionTable) {
         std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n'; 
@@ -172,22 +168,13 @@ void Linker::printStat() {
 
     for(auto [symbolName, symbol] : symbolTable) {
         for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table[symbolName].size() > 0) 
+            if(section->reloc_table[symbolName].size() > 0) {
                 std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
                 for(uint32 offset : section->reloc_table[symbolName]) {
                     std::cout << std::hex << offset << '\n';
                 }
+            }
         }
     }
-
-    // for(auto [sectionName, section] : sectionTable) {
-    //     for(int i = 0; i < section->data.size(); i += 4) {
-    //         uint32 binary_data = ((section->data[i]&0xff) << 24) | ((section->data[i+1]&0xff) << 16) | ((section->data[i+2]&0xff) << 8) | (section->data[i+3]&0xff);
-    //         std::cout << std::hex << std::setw(2) << ((binary_data >> 24) & 0xff) << " "
-    //                               << std::setw(2) << ((binary_data >> 16) & 0xff) << " "
-    //                               << std::setw(2) << ((binary_data >> 8) & 0xff) << " "
-    //                               << std::setw(2) << (binary_data & 0xff) << '\n';
-    //     }
-    // }
     std::cout << "------------------------------------------------------\n";
 }
