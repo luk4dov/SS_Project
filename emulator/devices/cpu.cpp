@@ -5,10 +5,6 @@ CPU::CPU(Memory* memory) : halt(false), memory(memory) {
     reset();
 }
 
-CPU::~CPU() {
-    delete memory;
-}
-
 void CPU::reset() {
     for (int i = 0; i < 15; i++) {
         registers[i] = 0;
@@ -31,6 +27,10 @@ void CPU::executeInstruction() {
     int rb = (instruction >> 16) & 0xf;
     int rc = (instruction >> 12) & 0xf;
     int disp = instruction & 0xfff;
+
+    if (disp & 0x800) { // sign extend the 12-bit displacement
+        disp |= 0xfffff000;
+    }
 
     Instruction* instr = Instruction::binaryInstructions[op](mod, ra, rb, rc, disp);
 

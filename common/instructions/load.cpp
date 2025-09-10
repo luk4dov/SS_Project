@@ -26,7 +26,7 @@ Instruction* LoadInstruction::parsedInstruction(const std::string& instr, int r1
         }
 
         if(instr == "csrrd")
-            return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::CSR);
+            return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::REGULAR);
         else 
             return new LoadInstruction(r2, r1, 0, instr, 0, LoadStoreOC::CSR);
     }
@@ -160,10 +160,10 @@ void LoadInstruction::execute(CPU* cpu) {
             break;
         }
         case LoadStoreOC::STACK: {
-            int address = cpu->getRegister(SP);
+            int address = cpu->getRegister(REGS(r2));
             int val = cpu -> readMem(address);
             cpu -> setRegister(REGS(r1), val);
-            cpu -> setRegister(SP, address + disp);
+            cpu -> setRegister(REGS(r2), address + disp);
             break;
         }
         case LoadStoreOC::CSR: {
@@ -171,13 +171,16 @@ void LoadInstruction::execute(CPU* cpu) {
                 int val = cpu->getRegister(REGS(r2));
                 cpu->setCSR(CSRREG(r1), val);
             } else { // r1 <= csr[r2]
-                uint32 address = cpu->getRegister(REGS(r2));
-                if(address < 0) {
-                    throw InvalidAddress();
+                int val = cpu->getRegister(REGS(r2)) + cpu->getRegister(REGS(r3)) + disp;
+                if (mod == 7)
+                {
+                    cpu->setRegister(REGS(r2), val);
                 }
-                int val = cpu->readMem(address);
+                if(mod == 6) { // r1 <= mem[val] 
+                    val = cpu->readMem((uint32)val);
+                }
                 cpu->setCSR(CSRREG(r1), val);
-                cpu->setRegister(REGS(r1), address + disp);
+                
             }
         }
     }

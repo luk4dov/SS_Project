@@ -208,7 +208,9 @@ void BinaryRW::readHex(std::string fileName, std::unordered_map<uint32, std::vec
 
             // std::cout << "Block: " << std::hex << block << '\n';
 
-            mem[block] = std::vector<uchar>(1<<12, 0);
+            if(mem.find(block) == mem.end())
+                mem[block] = std::vector<uchar>(1<<12, 0);
+            
 
             for(uint32 word = blockAddress & 0xfff; word < (1 << 12) && (block << 12 | word) < addr + size * sizeof(uchar); ++word) {
                 mem[block][word] = readByte();

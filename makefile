@@ -16,13 +16,13 @@ ASM_TARGET = asm_exec
 LINKER_TARGET = linker_exec
 EMULATOR_TARGET = emulator_exec
 
+all: asm linker emulator
 
 asm: $(ASM_TARGET)
 linker: $(LINKER_TARGET)
 emulator: $(EMULATOR_TARGET)
 
 
-all: asm linker emulator
 
 
 ASM_SRCS = $(wildcard $(DIRECTORY_ASM)/*.cpp)
@@ -82,18 +82,18 @@ EMULATOR_OBJ_FILES = $(EMULATOR_OBJS) $(COMMON_EMULATOR_OBJS) $(INSTRUCTION_EMUL
 
 
 $(BUILD)/asm/%.o: $(DIRECTORY_ASM)/%.cpp | $(BUILD)/asm
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 $(BUILD)/linker/%.o: $(DIRECTORY_LINKER)/%.cpp | $(BUILD)/linker
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 $(BUILD)/emulator/%.o: $(DIRECTORY_EMULATOR)/%.cpp | $(BUILD)/emulator
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 
 $(BUILD)/asm/%.o: $(COMMON)/%.cpp | $(BUILD)/asm
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 $(BUILD)/linker/%.o: $(COMMON)/%.cpp | $(BUILD)/linker
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 $(BUILD)/emulator/%.o: $(COMMON)/%.cpp | $(BUILD)/emulator
-	$(GPP) -c $< -Icommon -o $@
+	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)
 
 $(BUILD)/asm/%.o: $(INSTRUCTIONS)/%.cpp | $(BUILD)/asm
 	$(GPP) -c $< -Icommon -o $@ $(CXXFLAGS)

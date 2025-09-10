@@ -26,16 +26,10 @@ void IntInstruction::execute(CPU* cpu) {
     cpu->writeMem(sp-4, status);
     cpu->writeMem(sp-8, pc);
 
-    std::cout << "OK\n";
-
     cpu->setRegister(SP, sp - 8);
     cpu->setCSR(CAUSE, 4);
-    cpu->setCSR(STATUS, status & ~(0x1));
+    cpu->setCSR(STATUS, status | 4);
     uint32 handle = cpu->getCSR(CSRREG::HANDLER);
-    
-    std::cout << "Address of interrupt routine is " << handle << '\n';
 
     cpu->setRegister(PC, handle);
-
-
 }

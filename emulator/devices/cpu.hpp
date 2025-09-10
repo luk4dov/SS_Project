@@ -12,7 +12,6 @@ class CPU {
 public:
 
     CPU(Memory*);
-    ~CPU();
 
     void reset();
     void executeInstruction();

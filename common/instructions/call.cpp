@@ -52,8 +52,7 @@ void CallInstruction::execute(CPU* cpu) {
     uint32 pc = cpu->getRegister(PC);
 
     cpu->setRegister(SP, sp - 4);
-    cpu->setRegister(PC, pc + 4);
-    cpu->writeMem(sp, pc);
+    cpu->writeMem(sp - 4, pc);
 
     uint32 address = cpu->getRegister(REGS(r1)) + cpu->getRegister(REGS(r2)) + disp;
     if(mod == 1) {

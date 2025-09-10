@@ -7,7 +7,6 @@
 class Memory {
 public:
     Memory(const char*);
-    ~Memory();
 
     int read(uint32 address);
 

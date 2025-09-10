@@ -78,21 +78,23 @@ int StoreInstruction::writeSectionData(Section* section, std::unordered_map<std:
 void StoreInstruction::execute(CPU* cpu) {
     switch(op) {
         case STACK: {
-            uint32 sp = cpu->getRegister(SP);
+            uint32 sp = cpu->getRegister(REGS(r1));
+            uint32 val = cpu->getRegister(REGS(r3));
             sp += disp;
-            cpu->writeMem(sp, r3);
-            cpu->setRegister(SP, sp);
+            cpu->writeMem(sp, val);
+            cpu->setRegister(REGS(r1), sp);
             break;
         }
         case CSR: {
             return;
         }
         case REGULAR: {
-            uint32 address = cpu->getRegister((REGS)r1) + cpu->getRegister((REGS)r2) + immediate;
+            uint32 address = cpu->getRegister((REGS)r1) + cpu->getRegister((REGS)r2) + disp;
+            uint32 val = cpu->getRegister((REGS)r3);
             if(mod == 2) {
                 address = static_cast<uint32>(cpu->readMem(address));
             }
-            cpu->writeMem(address, r3);
+            cpu->writeMem(address, val);
         }
     }
 }

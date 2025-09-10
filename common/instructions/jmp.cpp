@@ -69,20 +69,20 @@ void JmpInstruction::execute(CPU* cpu) {
     switch(cond) {
         case (ALWAYS): break;
         case (BGT) : {
-            if(r2 <= r3) return;
+            if(cpu->getRegister(REGS(r2)) <= cpu->getRegister(REGS(r3))) return;
             break;
         }
         case (BEQ) : {
-            if(r2 != r3) return;
+            if(cpu->getRegister(REGS(r2)) != cpu->getRegister(REGS(r3))) return;
             break;
         }
         case (BNE) : {
-            if(r2 == r3) return;
+            if(cpu->getRegister(REGS(r2)) == cpu->getRegister(REGS(r3))) return;
             break;
         }
     }
 
-    if(mod > 0xf) {
+    if(mod > 0x7) { // indirect jump
         newPc = cpu->readMem(newPc);
     }
     cpu->setRegister(PC, (uint32)newPc);
