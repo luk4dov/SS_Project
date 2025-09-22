@@ -1,7 +1,7 @@
 #include "cpu.hpp"
 #include "../../common/instruction.hpp"
 
-CPU::CPU(Memory* memory) : halt(false), memory(memory) {
+CPU::CPU(Memory* memory) : halt(false), term_out(0xffffff00), term_in(0xffffff04), memory(memory) {
     reset();
 }
 
@@ -14,12 +14,13 @@ void CPU::reset() {
     csr[CSRREG::STATUS] = 0;
     csr[CSRREG::HANDLER] = 0;
     csr[CSRREG::CAUSE] = 0;
+    memory->write(term_out, -1);
 }
 
 void CPU::executeInstruction() {
     
     uint32 instruction = static_cast<uint32>(memory->read(registers[PC]));
-    registers[PC] += 4; // Increment PC
+    registers[PC] += 4;
 
     OperationCode op = static_cast<OperationCode>(instruction >> 28);
     int mod = (instruction >> 24) & 0xf;
@@ -39,12 +40,8 @@ void CPU::executeInstruction() {
     delete instr;
 }
 
-void CPU::handleInterrupt() {
-    // TODO: Implementation of interrupt handling 
-}
-
 void CPU::printContext() {
-    std::cout << "---------------------------------------------------------------\n";
+    std::cout << "\n---------------------------------------------------------------\n";
     std::cout << "Emulated processor executed halt instruction\n";
     std::cout << "Emulated processor state:\n";
 

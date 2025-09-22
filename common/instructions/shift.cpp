@@ -21,8 +21,6 @@ int ShiftInstruction::writeSectionData(Section* section, std::unordered_map<std:
 }
 
 void ShiftInstruction::execute(CPU* cpu) {
-    if(r1 == 0) return;
-
     switch(mod) {
         case LEFT: {
             cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) << cpu->getRegister((REGS)r3));

@@ -154,7 +154,7 @@ int Assembler::assemble() {
         int ret = yyparse();
 
         removeLocalSymbols();
-        
+
         write();
 
         return ret;

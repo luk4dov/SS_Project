@@ -29,7 +29,7 @@ int Linker::link() {
             // section with that name already exists, merge it into one and update relocation table
 
             // loop through all the relocations in current section and add size of the section that's already in big section table to the offsets
-            // relocation of local symbols (because it's done over sectio's name, and not symbol's name)
+            // relocation of local symbols (because it's done over section's name, and not symbol's name)
             for(auto& [symbolName, offsets] : tempSection->reloc_table) {
                 for(auto offset : offsets) {
                     sectionTable[tempSectionName]->reloc_table[symbolName].push_back(offset + sectionTable[tempSectionName]->data.size());
@@ -53,7 +53,7 @@ int Linker::link() {
                 if(tempSymbol->defined) {  // two global symbols with the same name and both defined, error
                     throw SymbolMultipleDefinition(tempSymbolName);
                 }
-            } else if(tempSymbol->defined) { // we found definition of symbol, update symbol table
+            } else if(tempSymbol->defined && tempSymbolName[0] != '.') { // we found definition of symbol, update symbol table (don't want to move .{section_name} symbols)
                 Symbol* old = symbolTable[tempSymbolName];
                 symbolTable[tempSymbolName] = tempSymbol;
                 symbolTable[tempSymbolName]->offset += sectionTable[tempSymbol->section]->data.size() - tempSectionTable[tempSymbol->section]->data.size(); // adjust offset to the new section
@@ -114,13 +114,13 @@ int Linker::createExecutable(std::string outputFile) {
         for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
             uint32 symbolAddress = sectionTable[symbol->section]->addr + symbol->offset;
-            
+
             for(uint32 offset : offsets) {
                 uint32 addend = (section->data[offset] & 0xff) | 
                                  ((section->data[offset+1] & 0xff) << 8) | 
                                  ((section->data[offset+2] & 0xff) << 16) | 
                                  ((section->data[offset+3] & 0xff) << 24);
-
+                
                 section->data[offset] = (symbolAddress + addend) & 0xff;
                 section->data[offset+1] = ((symbolAddress + addend) >> 8) & 0xff;
                 section->data[offset+2] = ((symbolAddress + addend) >> 16) & 0xff;
@@ -128,9 +128,9 @@ int Linker::createExecutable(std::string outputFile) {
             }
         }
     }
-
     // write to binary file
     rw->writeHex(outputFile, sectionTable, maxSectionAddress);
+    
     return 0;
 }
 
@@ -156,7 +156,7 @@ int Linker::linkAndCreateOutput() {
 void Linker::printStat() {
     std::cout << "Symbol table: symbol  |  section  |  offset  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
-        std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
+        std::cout << symbolName << " | " << symbol->section << " | " << std::hex << sectionTable[symbol->section]->addr + symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
     }
     std::cout << "------------------------------------------------------\n";
     

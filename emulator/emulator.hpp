@@ -4,6 +4,7 @@
 #include "../common/types.hpp"
 #include "./devices/cpu.hpp"
 #include "./devices/memory.hpp"
+#include "./devices/terminal.hpp"
 
 class Emulator {
 public:
@@ -13,11 +14,9 @@ public:
     int emulate();
 
 private:
-
-    std::unordered_map<uint32, std::vector<uchar>> mem;
-
     CPU* cpu;
     Memory* memory;
+    Terminal* terminal;
     
 };
 

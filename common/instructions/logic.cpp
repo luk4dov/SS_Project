@@ -27,8 +27,6 @@ int LogicInstruction::writeSectionData(Section* section, std::unordered_map<std:
 }
 
 void LogicInstruction::execute(CPU* cpu) {
-    if (r1 == 0) return;
-    
     switch(mod) {
         case AND: {
             cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) & cpu->getRegister((REGS)r3));

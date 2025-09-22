@@ -14,12 +14,14 @@ public:
 
     void reset();
     void executeInstruction();
-    void handleInterrupt();
 
     const bool getHalt() const { return halt; }
     void setHalt() { halt = true; }
 
-    void setRegister(REGS r, int val) { registers[r] = val; }
+    void setRegister(REGS r, int val) { 
+        if(r == REGS::R0) return;
+        registers[r] = val; 
+    }
     int getRegister(REGS r) { return registers[r]; }
 
     void setCSR(CSRREG r, int val) { csr[r] = val; }
@@ -28,6 +30,9 @@ public:
     void writeMem(uint32 address, int data) { memory->write(address, data); }
     uint32 readMem(uint32 address) { return memory->read(address); }
 
+    const uint32 getTermOut() const { return this->term_out; }
+    const uint32 getTermIn() const { return this->term_in; }
+
     void printContext();
 
 private:
@@ -35,7 +40,9 @@ private:
 
     int registers[16];
     uint32 csr[3]; // status, handler, cause
-    
+    const uint32 term_out;
+    const uint32 term_in;
+
     Memory* memory;
 
 };
