@@ -7,6 +7,8 @@
 #include <iostream>
 #include <stdint.h>
 #include <iomanip>
+#include <queue>
+#include <utility>
 
 typedef uint32_t uint32;
 typedef uint8_t uchar;
@@ -48,6 +50,20 @@ public:
     std::string name;
     std::unordered_map<std::string, std::vector<uint32>> reloc_table;
     std::vector<uchar> data;
+};
+
+class EquExpression {
+public:
+    EquExpression(uint32 type, const std::string& symbol, uint32 value, const std::string& operand1, const std::string& operand2, uint32 operation) 
+        : type(type), symbol(symbol), value(value), operand1(operand1), operand2(operand2), operation(operation) {}
+    ~EquExpression() = default;
+
+    uint32 type;
+    std::string symbol;
+    uint32 value;
+    std::string operand1;
+    std::string operand2;
+    uint32 operation;
 };
 
 enum {

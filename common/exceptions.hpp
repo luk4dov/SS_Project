@@ -26,6 +26,20 @@ public:
     }
 };
 
+class InitializationWithNonEquSymbol : public std::exception {
+public:
+    InitializationWithNonEquSymbol(std::string symbolName, std::string fileName, int line) {
+        std::cerr << "Error: " << fileName << ": line " << line << ": " << "Initialization of symbol: " << symbolName << " with non .equ symbol.\n";
+    }
+};
+
+class CircularDependencyInEqu : public std::exception {
+public:
+    CircularDependencyInEqu(std::string fileName) {
+        std::cerr << "Error: " << fileName << ": " << "Circular dependency in .equ directives.\n";
+    }
+};
+
 class SymbolMultipleDefinition : public std::exception {
 public:
     SymbolMultipleDefinition(std::string symbolName) {

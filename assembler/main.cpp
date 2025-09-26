@@ -14,6 +14,11 @@ void selectDirective(const char* dir, const char* nm, uint32 immediate) {
     assembler->selectDirective(std::string(dir), std::string(nm), immediate);
 }
 
+void equDirective(uint32 type, const char* sym, const char* op1, const char* op2, uint32 u_op1, uint32 u_op2, uint32 op) {
+    assembler->equDirective(type, std::string(sym), std::string(op1), std::string(op2), u_op1, u_op2, op);
+}
+
+
 int main(int argc, char* argv[]) {
     if(argc < 2 || argc > 4 || argc == 3) {
         std::cerr << "Error: Invalid arguments\n";

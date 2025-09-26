@@ -41,7 +41,9 @@ void ArithInstruction::execute(CPU* cpu) {
         }
         case DIV: {
             if(cpu->getRegister((REGS)r3) == 0) {
-                throw DivisionByZero();
+                // throw DivisionByZero();
+                cpu->interrupt(INT_CAUSE::INVALID_INSTRUCTION);
+                return;
             }
             cpu->setRegister((REGS)r1, cpu->getRegister((REGS)r2) / cpu->getRegister((REGS)r3));
         }

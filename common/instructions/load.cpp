@@ -69,7 +69,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             if(symbolTable.find(label) == symbolTable.end()) {
                 symbolTable[label] = new Symbol("UND", 0);
             }
-            else if(symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < 0x7ff) { // can be pc relative
+            else if(symbolTable[label]->section != "ABS" && symbolTable[label]->defined && section->data.size() - symbolTable[label]->offset < MAX_VAL) { // can be pc relative
                 uint32 binary = serialize(LOAD, 2, r1, 15, 0, symbolTable[label]->offset - section->data.size()); // ra <= mem[rb+rc+disp] = reg <= mem[pc + 0 + (-offset)];
                 write_binary(section, binary);
                 return 4;

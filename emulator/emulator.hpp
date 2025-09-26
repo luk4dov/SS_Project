@@ -5,6 +5,7 @@
 #include "./devices/cpu.hpp"
 #include "./devices/memory.hpp"
 #include "./devices/terminal.hpp"
+#include "./devices/timer.hpp"  
 
 class Emulator {
 public:
@@ -17,6 +18,7 @@ private:
     CPU* cpu;
     Memory* memory;
     Terminal* terminal;
+    Timer* timer;
     
 };
 

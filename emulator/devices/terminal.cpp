@@ -22,23 +22,10 @@ void Terminal::in() {
     int ret = inNonBlock();
     if(ret == -1) return;
     
-    uint32 status = cpu->getCSR(STATUS);
-    if(status & 4 || status & 2) return;
-
     uint32 term_in = cpu->getTermIn();
     cpu->writeMem(term_in, ret);
-    
-    uint32 sp = cpu->getRegister(SP);
-    uint32 pc = cpu->getRegister(PC);
-    cpu->writeMem(sp-4, status);
-    cpu->writeMem(sp-8, pc);
 
-    cpu->setRegister(SP, sp - 8);
-    cpu->setCSR(CAUSE, 3);
-    cpu->setCSR(STATUS, status | 6);
-
-    uint32 handle = cpu->getCSR(CSRREG::HANDLER);
-    cpu->setRegister(PC, handle);
+    cpu->interrupt(INT_CAUSE::TERMINAL);
 }
 
 void Terminal::out() {

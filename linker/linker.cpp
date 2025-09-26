@@ -34,6 +34,21 @@ int Linker::link() {
                 for(auto offset : offsets) {
                     sectionTable[tempSectionName]->reloc_table[symbolName].push_back(offset + sectionTable[tempSectionName]->data.size());
                 }
+                if(symbolName[0] == '.') { // increase addend of local symbols in temp section table
+                    for(auto offset : offsets) {
+                        uint32 addend = (tempSection->data[offset] & 0xff) | 
+                                 ((tempSection->data[offset+1] & 0xff) << 8) | 
+                                 ((tempSection->data[offset+2] & 0xff) << 16) | 
+                                 ((tempSection->data[offset+3] & 0xff) << 24);
+                        
+                        addend += sectionTable[tempSectionName]->data.size();
+
+                        tempSection->data[offset] = (addend) & 0xff;
+                        tempSection->data[offset+1] = (addend >> 8) & 0xff;
+                        tempSection->data[offset+2] = (addend >> 16) & 0xff;
+                        tempSection->data[offset+3] = (addend >> 24) & 0xff;
+                    }
+                }
             }
 
             // copy data from temp section the section that already exists
@@ -44,6 +59,7 @@ int Linker::link() {
             if (symbolTable.find(tempSymbolName) == symbolTable.end()) { // insert it as new symbol
                 symbolTable[tempSymbolName] = tempSymbol;
                 symbolTable[tempSymbolName]->offset += sectionSize[tempSymbol->section]; // adjust offset to the new section
+                
                 continue;
             }
             // symbol with that name already exists, check if it's defined or not
@@ -105,6 +121,7 @@ int Linker::createExecutable(std::string outputFile) {
         if(sectionAddress.find(sectionName) != sectionAddress.end()) { // it's placed by -place option
             continue;
         }
+        
         section->addr = currentAddress;
         currentAddress += section->data.size();
     }
@@ -113,7 +130,11 @@ int Linker::createExecutable(std::string outputFile) {
     for(const auto& [sectionName, section] : sectionTable) {
         for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
-            uint32 symbolAddress = sectionTable[symbol->section]->addr + symbol->offset;
+            
+            uint32 symbolAddress = symbol->offset;
+            if(symbol->section != "ABS") {
+                symbolAddress += sectionTable[symbol->section]->addr;
+            }
 
             for(uint32 offset : offsets) {
                 uint32 addend = (section->data[offset] & 0xff) | 
@@ -156,7 +177,12 @@ int Linker::linkAndCreateOutput() {
 void Linker::printStat() {
     std::cout << "Symbol table: symbol  |  section  |  offset  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
-        std::cout << symbolName << " | " << symbol->section << " | " << std::hex << sectionTable[symbol->section]->addr + symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
+        if(symbolTable[symbolName]->section != "ABS") {
+            std::cout << symbolName << " | " << symbol->section << " | " << std::hex << sectionTable[symbol->section]->addr + symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
+        }
+        else {
+            std::cout << symbolName << " | " << symbol->section << " | " << std::hex << symbol->offset << " | " << symbol->defined << " | " << symbol->global << '\n';
+        }
     }
     std::cout << "------------------------------------------------------\n";
     
@@ -166,15 +192,15 @@ void Linker::printStat() {
     }
     std::cout << "------------------------------------------------------\n";
 
-    for(auto [symbolName, symbol] : symbolTable) {
-        for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table[symbolName].size() > 0) {
-                std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
-                for(uint32 offset : section->reloc_table[symbolName]) {
-                    std::cout << std::hex << offset << '\n';
-                }
-            }
-        }
-    }
-    std::cout << "------------------------------------------------------\n";
+    // for(auto [symbolName, symbol] : symbolTable) {
+    //     for(auto [sectionName, section] : sectionTable) {
+    //         if(section->reloc_table[symbolName].size() > 0) {
+    //             std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
+    //             for(uint32 offset : section->reloc_table[symbolName]) {
+    //                 std::cout << std::hex << offset << '\n';
+    //             }
+    //         }
+    //     }
+    // }
+    // std::cout << "------------------------------------------------------\n";
 }

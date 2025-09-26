@@ -1,7 +1,7 @@
 #include "cpu.hpp"
 #include "../../common/instruction.hpp"
 
-CPU::CPU(Memory* memory) : halt(false), term_out(0xffffff00), term_in(0xffffff04), memory(memory) {
+CPU::CPU(Memory* memory) : halt(false), term_out(0xffffff00), term_in(0xffffff04), tim_cfg(0xffffff10), memory(memory) {
     reset();
 }
 
@@ -15,6 +15,7 @@ void CPU::reset() {
     csr[CSRREG::HANDLER] = 0;
     csr[CSRREG::CAUSE] = 0;
     memory->write(term_out, -1);
+    memory->write(tim_cfg, 0);
 }
 
 void CPU::executeInstruction() {
@@ -39,6 +40,33 @@ void CPU::executeInstruction() {
 
     delete instr;
 }
+
+void CPU::interrupt(INT_CAUSE flag) { // push status; push pc; cause <= 4; status <= status & ~(0x1); pc <= handle
+    if(getCSR(CSRREG::HANDLER) == 0) return; // if no handler, ignore interrupt
+
+    if(flag == INT_CAUSE::TIMER && getCSR(CSRREG::STATUS) & ((1 << INT_MASK::TIMER_STATUS) | (1 << INT_MASK::GLOBAL))) {
+        return;
+    }
+
+    else if(flag == INT_CAUSE::TERMINAL && getCSR(CSRREG::STATUS) & ((1 << INT_MASK::TERMINAL_STATUS) | (1 << INT_MASK::GLOBAL))) {
+        return;
+    }
+
+    uint32 status = csr[STATUS];
+    uint32 sp = registers[SP];
+    uint32 pc = registers[PC];
+    memory->write(sp-4, status);
+    memory->write(sp-8, pc);
+
+    registers[SP] = sp - 8;
+    csr[CAUSE] = static_cast<uint32>(flag);
+    
+    csr[STATUS] = status | (1 << INT_MASK::GLOBAL);
+
+    uint32 handle = csr[HANDLER];
+    registers[PC] = handle;
+}
+
 
 void CPU::printContext() {
     std::cout << "\n---------------------------------------------------------------\n";

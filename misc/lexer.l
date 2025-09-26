@@ -26,6 +26,7 @@ ALPHANUM    [a-zA-Z0-9_]
 \.word              { return WORD;    }
 \.end               { return END;     }
 \.ascii             { return ASCII;   }
+\.equ               { return EQU;     }
 
 halt                { return HALT;  } 
 int                 { return INT;   } 

@@ -11,6 +11,7 @@
     extern void selectInstruction(const char*, int, int, uint32, const char*, int);
     extern void selectDirective(const char*, const char*, uint32);
     extern void labelDefinition(const char*);
+    extern void equDirective(uint32, const char*, const char*, const char*, uint32, uint32, uint32);
 
 %}
 
@@ -24,7 +25,7 @@
 %token <regn> REGISTER
 %token <str> IDENTIFIER CSR SYMBOL_REF STRING_LITERAL
 
-%token EXTERN GLOBAL SECTION WORD END ASCII SKIP
+%token EXTERN GLOBAL SECTION WORD END ASCII SKIP EQU
 %token LD ST PUSH POP XCHG
 %token ADD SUB MUL DIV 
 %token NOT AND OR XOR
@@ -59,6 +60,13 @@ directive:
 |   WORD word_identifier_list
 |   SKIP NUMBER { selectDirective("skip", "", $2); }
 |   ASCII string { selectDirective("ascii", $2, 0); }
+|   EQU IDENTIFIER COMMA NUMBER { equDirective(0, $2, "", "", $4, -1, 0); }
+|   EQU IDENTIFIER COMMA NUMBER PLUS NUMBER { equDirective(1, $2, "", "", $4, $6, 1); }
+|   EQU IDENTIFIER COMMA NUMBER MINUS NUMBER { equDirective(1, $2, "", "", $4, $6, 2); }
+|   EQU IDENTIFIER COMMA IDENTIFIER { equDirective(2, $2, $4, "", -1, -1, 0); }
+|   EQU IDENTIFIER COMMA IDENTIFIER PLUS NUMBER { equDirective(3, $2, $4, "", $6, -1, 1); }
+|   EQU IDENTIFIER COMMA IDENTIFIER MINUS NUMBER { equDirective(3, $2, $4, "", $6, -1, 2); }
+|   EQU IDENTIFIER COMMA IDENTIFIER MINUS IDENTIFIER { equDirective(4, $2, $4, $6, -1, -1, 2); }
 |   END { return 0; };
 
 

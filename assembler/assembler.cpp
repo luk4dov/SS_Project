@@ -22,14 +22,16 @@ void Assembler::removeLocalSymbols() {
         }
         
         localSymbols.push_back(symbolName);
-
+        
         // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address         
-
         for(const auto& [sectionName, section] : sectionTable) {
             for(uint32 offset : section->reloc_table[symbolName]) {                     // for every relocation of symbol in this section
                 Symbol* sym = symbolTable[symbolName];
 
-                section->reloc_table["." + sym->section].push_back(offset);             // create new relocation but over symbol's section
+                if(symbol->section != "ABS") {
+                    section->reloc_table["." + sym->section].push_back(offset);
+                }
+                // section->reloc_table["." + sym->section].push_back(offset);             // create new relocation but over symbol's section
                 section->data[offset] = symbol->offset & 0xff;                          // load symbol's offset from it's section to memory; little endian
                 section->data[offset+1] = (symbol->offset >> 8) & 0xff;
                 section->data[offset+2] = (symbol->offset >> 16) & 0xff;
@@ -50,7 +52,7 @@ void Assembler::removeLocalSymbols() {
     }
 }
 
-void Assembler::selectInstruction(std::string instr, int reg1, int reg2, uint32 immediate, std::string label, int type) {
+void Assembler::selectInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
     Instruction* instruction = Instruction::parsedInstructions[instr](instr, reg1, reg2, immediate, label, type);
 
     instruction->writeSectionData(sectionTable[section], symbolTable);
@@ -58,7 +60,7 @@ void Assembler::selectInstruction(std::string instr, int reg1, int reg2, uint32 
     delete instruction;
 }
 
-void Assembler::labelDefinition(std::string symbolName) {
+void Assembler::labelDefinition(const std::string& symbolName) {
     if (symbolTable.find(symbolName) == symbolTable.end()) { // symbol not in table, insert it
         symbolTable[symbolName] = new Symbol(section, sectionTable[section]->data.size(), false, true);
         return;
@@ -72,7 +74,7 @@ void Assembler::labelDefinition(std::string symbolName) {
     symbolTable[symbolName]->defined = true;
 }
 
-void Assembler::selectDirective(std::string directive, std::string name, uint32 immediate) {
+void Assembler::selectDirective(const std::string& directive, const std::string& name, uint32 immediate) {
     if(directive == "global" || directive == "extern")  {
     
         if(symbolTable.find(name) == symbolTable.end()) {
@@ -121,6 +123,230 @@ void Assembler::selectDirective(std::string directive, std::string name, uint32 
     }
 }
 
+void Assembler::equDirective(uint32 type, const std::string& sym, const std::string& op1, const std::string& op2, uint32 num1, uint32 num2, uint32 operation) {
+    if (sectionTable.find("ABS") == sectionTable.end()) {
+        sectionTable["ABS"] = new Section(0, "ABS");
+        symbolTable[".ABS"] = new Symbol("ABS", 0, true, true);
+    }
+    
+    switch(type) {
+        case 0: { // .equ sym, num1
+            if(symbolTable.find(sym) != symbolTable.end() && symbolTable[sym]->defined) { // symbol already exists in literal pool
+                throw SymbolRedefinition(sym, std::string(inputFile), yylineno);
+            }
+            
+            if(symbolTable.find(sym) == symbolTable.end()) {
+                symbolTable[sym] = new Symbol("ABS", num1, false, true);
+            } else {
+                symbolTable[sym]->defined = true;
+                symbolTable[sym]->section = "ABS";
+                symbolTable[sym]->offset = num1;
+            }
+            return;
+        }
+        case 1: { // .equ sym, num1 +- num2
+            if(symbolTable.find(sym) != symbolTable.end() && symbolTable[sym]->defined) { // symbol already exists in literal pool
+                throw SymbolRedefinition(sym, std::string(inputFile), yylineno);
+            }
+
+            uint32 value = num1 + (operation == 1 ? num2 : -num2);
+            
+            if(symbolTable.find(sym) == symbolTable.end()) {
+                symbolTable[sym] = new Symbol("ABS", value, false, true);
+            } else {
+                symbolTable[sym]->defined = true;
+                symbolTable[sym]->section = "ABS";
+                symbolTable[sym]->offset = value;
+            }
+            return;
+        }
+        case 2: { // .equ sym, op1
+            if(symbolTable.find(sym) != symbolTable.end() && (symbolTable[sym]->defined || symbolTable[sym]->section != "UND")) { // symbol already exists in symbol table
+                throw SymbolRedefinition(sym, std::string(inputFile), yylineno);
+            }
+
+            // if operand1 is defined but not as .equ symbol, throw error
+            if(symbolTable.find(op1) != symbolTable.end() && symbolTable[op1]->defined && symbolTable[op1]->section != "ABS") {
+                throw InitializationWithNonEquSymbol(op1, std::string(inputFile), yylineno);
+            }
+            
+            if(symbolTable.find(op1) != symbolTable.end() && symbolTable[op1]->defined) {
+                
+                uint32 value = symbolTable[op1]->offset;
+
+                if(symbolTable.find(sym) == symbolTable.end()) {
+                    symbolTable[sym] = new Symbol("ABS", value, false, true);
+                } else {
+                    symbolTable[sym]->defined = true;
+                    symbolTable[sym]->section = "ABS";
+                    symbolTable[sym]->offset = value;
+                }
+                return;
+            } // op1 is not defined yet, add it to unresolved queue
+            
+            if(symbolTable.find(sym) == symbolTable.end()) { symbolTable[sym] = new Symbol("ABS", 0); }
+            if(symbolTable.find(op1) == symbolTable.end()) { symbolTable[op1] = new Symbol("UND", 0); }
+            unresolvedEqus.push(new EquExpression(2, sym, 0, op1, "", operation));
+            return;
+        }
+        case 3: { // .equ sym, op1 +- num1
+            if(symbolTable.find(sym) != symbolTable.end() && (symbolTable[sym]->defined || symbolTable[sym]->section != "UND")) { // symbol already exists in symbol table
+                throw SymbolRedefinition(sym, std::string(inputFile), yylineno);
+            }
+
+            // if operand1 is defined but not as .equ symbol, throw error
+            if(symbolTable.find(op1) != symbolTable.end() && symbolTable[op1]->defined && symbolTable[op1]->section != "ABS") {
+                throw InitializationWithNonEquSymbol(op1, std::string(inputFile), yylineno);
+            }
+            
+            if(symbolTable.find(op1) != symbolTable.end() && symbolTable[op1]->defined) {
+                uint32 value = symbolTable[op1]->offset + (operation == 1 ? num1 : -num1);
+
+                if(symbolTable.find(sym) == symbolTable.end()) {
+                    symbolTable[sym] = new Symbol("ABS", value, false, true);
+                } else {
+                    symbolTable[sym]->defined = true;
+                    symbolTable[sym]->section = "ABS";
+                    symbolTable[sym]->offset = value;
+                }
+                return;
+            }
+            // operand not defined, add expression to unresolved queue
+            if(symbolTable.find(sym) == symbolTable.end()) { symbolTable[sym] = new Symbol("ABS", 0); }
+            if(symbolTable.find(op1) == symbolTable.end()) { symbolTable[op1] = new Symbol("UND", 0); }
+            unresolvedEqus.push(new EquExpression(3, sym, num1, op1, "", operation));
+            return;
+        }
+        case 4: { // .equ sym, op1 - op2
+            if(symbolTable.find(sym) != symbolTable.end() && (symbolTable[sym]->defined || symbolTable[sym]->section != "UND")) { // symbol already exists in symbol table
+                throw SymbolRedefinition(sym, std::string(inputFile), yylineno);
+            }
+            
+            // both operands must be defined either as equ symbols, or as regular symbols in the same section
+            if(symbolTable.find(op1) != symbolTable.end() && symbolTable[op1]->defined && 
+               symbolTable.find(op2) != symbolTable.end() && symbolTable[op2]->defined &&
+               symbolTable[op1]->section == symbolTable[op2]->section) { // both operands are defined and belong to the same section
+                uint32 value = symbolTable[op1]->offset - symbolTable[op2]->offset;
+                
+                if(symbolTable.find(sym) == symbolTable.end()) {
+                    symbolTable[sym] = new Symbol("ABS", value, false, true);
+                } else {
+                    symbolTable[sym]->defined = true;
+                    symbolTable[sym]->section = "ABS";
+                    symbolTable[sym]->offset = value;
+                }
+                return;
+            }
+            // at least one of the operands is not defined, add expression to unresolved queue
+            if(symbolTable.find(sym) == symbolTable.end()) { symbolTable[sym] = new Symbol("ABS", 0); }
+            if(symbolTable.find(op1) == symbolTable.end()) { symbolTable[op1] = new Symbol("UND", 0); }
+            if(symbolTable.find(op2) == symbolTable.end()) { symbolTable[op2] = new Symbol("UND", 0); }
+            unresolvedEqus.push(new EquExpression(4, sym, 0, op1, op2, operation));
+        }
+    }
+}
+
+void Assembler::resolveEqus() {
+    EquExpression* expr;
+
+    while(true) {
+        int startSize = unresolvedEqus.size();
+        if(startSize == 0) break; // all expressions resolved
+
+        int currSize = unresolvedEqus.size();
+        
+        while(currSize-- > 0) {
+            expr = unresolvedEqus.front();
+            unresolvedEqus.pop();
+
+            int ret = tryToResolve(expr);
+            
+            if(ret == 0) { // successfully resolved
+                delete expr;
+                continue;
+            } else if(ret == -1) {
+                throw InitializationWithNonEquSymbol(expr->operand1, std::string(inputFile), yylineno);
+            } else if(ret == 1) { // operand not defined yet
+                unresolvedEqus.push(expr);
+                continue;
+            }
+        }
+
+        currSize = unresolvedEqus.size();
+
+        if(startSize == currSize) {
+            throw CircularDependencyInEqu(std::string(inputFile));
+        }
+    }
+}
+
+int Assembler::tryToResolve(EquExpression* expr) {
+    switch(expr->type) {
+        case 2: { // .equ sym, op1
+            // if operand1 is defined but not as .equ symbol, error
+            if(symbolTable[expr->operand1] -> defined && symbolTable[expr->operand1]->section != "ABS") {
+                return -1;
+            }
+
+            if(symbolTable[expr->operand1]->defined) {
+                uint32 value = symbolTable[expr->operand1]->offset;
+
+                symbolTable[expr->symbol]->defined = true;
+                symbolTable[expr->symbol]->section = "ABS";
+                symbolTable[expr->symbol]->offset = value;
+                return 0;
+            }
+            // operand not defined yet
+            return 1; // flag to try resolving expression again later
+        }
+        case 3: { // .equ sym, op1 +- num1
+            if(symbolTable[expr->operand1] -> defined && symbolTable[expr->operand1]->section != "ABS") {
+                return -1;
+            }
+
+            if(symbolTable[expr->operand1]->defined) {
+                uint32 value = symbolTable[expr->operand1]->offset + (expr->operation == 1 ? expr->value : -expr->value);
+                
+                symbolTable[expr->symbol]->defined = true;
+                symbolTable[expr->symbol]->section = "ABS";
+                symbolTable[expr->symbol]->offset = value;
+                return 0;
+            }
+            return 1; // flag to try again later
+        }
+        case 4: { // .equ sym, op1 - op2
+            // check if op1 and op2 are defined in the same section
+            // symbols in ABS section
+            if(symbolTable[expr->operand1] -> section == "ABS" && symbolTable[expr->operand2]->section == "ABS") {
+                if(symbolTable[expr->operand1] -> defined && symbolTable[expr->operand2]->defined) {
+                    uint32 value = symbolTable[expr->operand1]->offset - symbolTable[expr->operand2]->offset;
+                    
+                    symbolTable[expr->symbol]->defined = true;
+                    symbolTable[expr->symbol]->section = "ABS";
+                    symbolTable[expr->symbol]->offset = value;
+                    return 0;
+                }
+                return 1;
+            }
+            // symbols in non ABS sections, must be defined in the same section
+            if(symbolTable[expr->operand1] -> defined && symbolTable[expr->operand2]->defined && 
+               symbolTable[expr->operand1]->section == symbolTable[expr->operand2]->section) {
+                uint32 value = symbolTable[expr->operand1]->offset - symbolTable[expr->operand2]->offset;
+                
+                symbolTable[expr->symbol]->defined = true;
+                symbolTable[expr->symbol]->section = "ABS";
+                symbolTable[expr->symbol]->offset = value;
+                return 0;
+            }
+            // otherwise, error 
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+
 void Assembler::printStat() {
     std::cout << "Symbol table: symbol  |  section  |  offset  |  defined  |  bind \n";
     for(auto [symbolName, symbol] : symbolTable) {
@@ -134,17 +360,17 @@ void Assembler::printStat() {
     }
     std::cout << "------------------------------------------------------\n";
 
-    for(auto [symbolName, symbol] : symbolTable) {
-        for(auto [sectionName, section] : sectionTable) {
-            if(section->reloc_table[symbolName].size() > 0) {
-                std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
-                for(uint32 offset : section->reloc_table[symbolName]) {
-                    std::cout << std::hex << offset << '\n';
-                }
-            }
-        }
-    }
-    std::cout << "------------------------------------------------------\n";
+    // for(auto [symbolName, symbol] : symbolTable) {
+    //     for(auto [sectionName, section] : sectionTable) {
+    //         if(section->reloc_table[symbolName].size() > 0) {
+    //             std::cout << "reloc table for symbol " << symbolName << " in section " << sectionName << '\n';
+    //             for(uint32 offset : section->reloc_table[symbolName]) {
+    //                 std::cout << std::hex << offset << '\n';
+    //             }
+    //         }
+    //     }
+    // }
+    // std::cout << "------------------------------------------------------\n";
 }
 
 int Assembler::assemble() {
@@ -152,6 +378,8 @@ int Assembler::assemble() {
 
     try {
         int ret = yyparse();
+
+        resolveEqus();
 
         removeLocalSymbols();
 
@@ -162,6 +390,8 @@ int Assembler::assemble() {
     catch (LiteralNotIn12Bits &e) { return -1; }
     catch (LocalSymbolNotDefined &e) { return -2; }
     catch (SymbolRedefinition &e) { return -3; }
+    catch (InitializationWithNonEquSymbol &e) { return -4; }
+    catch (CircularDependencyInEqu &e) { return -5; }
 }
 
 void Assembler::write() {
