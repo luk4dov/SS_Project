@@ -24,19 +24,19 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: Invalid arguments\n";
         return -1;
     }
-    
+
     const char* inputFile = argv[argc-1];
     const char* outputFile;
 
-    if(argc > 2) 
+    if(argc > 2)
         outputFile = argv[2];
     else
         outputFile = "./izlazniFajl.o";
 
     assembler = new Assembler(inputFile, outputFile);
-    
+
     int ret = assembler->assemble();
-    
+
     delete assembler;
 
     return ret;

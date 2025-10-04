@@ -1,7 +1,7 @@
 #ifndef ARITH_HPP
 #define ARITH_HPP
 
-#include "instruction.hpp"
+#include "../instruction.hpp"
 
 class ArithInstruction : public Instruction {
 public:

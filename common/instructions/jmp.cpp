@@ -1,4 +1,4 @@
-#include "jmp.hpp"
+#include "./jmp.hpp"
 
 JmpInstruction::JmpInstruction(int r1, int r2, uint32 immediate, const std::string& label, int type, JMPCondition cond) :
     Instruction("jmp"), r1(r1), r2(r2), immediate(immediate), label(label), type(type), cond(cond)  {}
@@ -46,12 +46,12 @@ int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::s
         symbolTable[label] = symbol = new Symbol("UND", 0);
     }
     if(!symbol && symbolTable[label]->defined && symbolTable[label]->section == section->name) { // already in symbol table, check if it is defined in the same section
-            // check if offset is less than 12 signed bits
-            if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
-                binary = serialize(JMP, cond, 15, r1, r2, section->data.size() - symbolTable[label]->offset); // jmp pc - ofset
-                write_binary(section, binary);
-                return 4;
-            }
+        // check if offset is less than 12 signed bits
+        if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
+            binary = serialize(JMP, cond, 15, r1, r2, section->data.size() - symbolTable[label]->offset); // jmp pc - ofset
+            write_binary(section, binary);
+            return 4;
+        }
     }
     // relocation must be done, use jmp trick
     binary = serialize(JMP, 0x8+cond, 15, r1, r2, 0x4);
@@ -59,13 +59,13 @@ int JmpInstruction::writeSectionData(Section* section, std::unordered_map<std::s
     binary = serialize(JMP, 0, 15, 0, 0, 0x4);
     write_binary(section, binary);
     section->reloc_table[label].push_back(section->data.size());
-    write_binary(section, 0x0); // fill the memory for relocation with zeros 
+    write_binary(section, 0x0); // fill the memory for relocation with zeros
     return 12;
 }
 
 void JmpInstruction::execute(CPU* cpu) {
     uint32 newPc = cpu->getRegister(REGS(r1)) + disp;
-    
+
     switch(cond) {
         case (ALWAYS): break;
         case (BGT) : {
@@ -85,6 +85,6 @@ void JmpInstruction::execute(CPU* cpu) {
     if(mod > 0x7) { // indirect jump
         newPc = cpu->readMem(newPc);
     }
-    
+
     cpu->setRegister(PC, (uint32)newPc);
 }

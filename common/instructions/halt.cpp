@@ -1,4 +1,4 @@
-#include "halt.hpp"
+#include "./halt.hpp"
 
 Instruction* HaltInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
     return new HaltInstruction();

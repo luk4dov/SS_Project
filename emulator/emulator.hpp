@@ -1,11 +1,10 @@
 #ifndef EMULATOR_HPP
 #define EMULATOR_HPP
 
-#include "../common/types.hpp"
 #include "./devices/cpu.hpp"
 #include "./devices/memory.hpp"
 #include "./devices/terminal.hpp"
-#include "./devices/timer.hpp"  
+#include "./devices/timer.hpp"
 
 class Emulator {
 public:
@@ -19,7 +18,7 @@ private:
     Memory* memory;
     Terminal* terminal;
     Timer* timer;
-    
+
 };
 
 

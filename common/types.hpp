@@ -7,7 +7,6 @@
 #include <iostream>
 #include <stdint.h>
 #include <iomanip>
-#include <queue>
 #include <utility>
 
 typedef uint32_t uint32;
@@ -32,7 +31,7 @@ enum {
 
 class Symbol {
 public:
-    Symbol(std::string section, uint32 offset, bool global = false, bool defined = false) : section(section), offset(offset), global(global), defined(defined) {}
+    Symbol(const std::string& section, uint32 offset, bool global = false, bool defined = false) : section(section), offset(offset), global(global), defined(defined) {}
     ~Symbol() = default;
 
     std::string section;
@@ -43,7 +42,7 @@ public:
 
 class Section {
 public:
-    Section(uint32 addr, std::string name) : addr(addr), name(name) { reloc_table = {}; data = {}; }
+    Section(uint32 addr, const std::string& name) : addr(addr), name(name) { reloc_table = {}; data = {}; }
     ~Section() = default;
 
     uint32 addr;
@@ -54,7 +53,7 @@ public:
 
 class EquExpression {
 public:
-    EquExpression(uint32 type, const std::string& symbol, uint32 value, const std::string& operand1, const std::string& operand2, uint32 operation) 
+    EquExpression(uint32 type, const std::string& symbol, uint32 value, const std::string& operand1, const std::string& operand2, uint32 operation)
         : type(type), symbol(symbol), value(value), operand1(operand1), operand2(operand2), operation(operation) {}
     ~EquExpression() = default;
 

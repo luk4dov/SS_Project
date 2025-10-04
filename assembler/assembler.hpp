@@ -1,13 +1,12 @@
 #ifndef ASSEMBLER_HPP
 #define ASSEMBLER_HPP
 
-#include "../common/instruction.hpp"
 #include "../common/binaryrw.hpp"
-#include "../common/exceptions.hpp"
+#include <queue>
 
 class Assembler {
-public: 
-    Assembler(const char* inputFile, const char* outputFile) : inputFile(inputFile), outputFile(outputFile), section("") { 
+public:
+    Assembler(const char* inputFile, const char* outputFile) : inputFile(inputFile), outputFile(outputFile), section("") {
         sectionTable = {}; symbolTable = {}; rw = new BinaryRW(); unresolvedEqus = {}; // literalPool = {};
     }
 
@@ -22,7 +21,6 @@ public:
     void equDirective(uint32, const std::string&, const std::string&, const std::string&, uint32, uint32, uint32);
 
 private:
-
     BinaryRW* rw;
 
     const char* inputFile;
@@ -33,11 +31,9 @@ private:
     std::unordered_map<std::string, Symbol*> symbolTable;
 
     std::queue<EquExpression*> unresolvedEqus;
-
-    
     void resolveEqus();
     int tryToResolve(EquExpression*);
-    
+
     void removeLocalSymbols();
     void printStat();
 };

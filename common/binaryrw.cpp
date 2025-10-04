@@ -1,10 +1,10 @@
-#include "binaryrw.hpp"
+#include "./binaryrw.hpp"
 
 void BinaryRW::read(const std::string& fileName, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable) {
     file = std::fstream(fileName, std::ios::in | std::ios::binary);
 
     uint32 symbolTableSize = readUint32();
-    
+
     for(uint32 i = 0; i < symbolTableSize; ++i) {
         std::string symbolName = readString();
         std::string section = readString();
@@ -15,7 +15,7 @@ void BinaryRW::read(const std::string& fileName, std::unordered_map<std::string,
     }
 
     uint32 sectionTableSize = readUint32();
-    
+
     for(uint32 i = 0; i < sectionTableSize; ++i) {
         std::string section = readString(); // section name
         uint32 addr = readUint32(); // section address
@@ -26,13 +26,13 @@ void BinaryRW::read(const std::string& fileName, std::unordered_map<std::string,
             std::string symbol = readString();
             uint32 vectorSize = readUint32();
             std::vector<uint32> offset;
-            
+
             for(uint32 k = 0; k < vectorSize; k++) {
                 offset.push_back(readUint32());
             }
             relocTable[symbol] = offset;
         }
-        
+
         uint32 dataSize = readUint32();
         std::vector<uchar> sectionData;
 
@@ -50,9 +50,9 @@ void BinaryRW::read(const std::string& fileName, std::unordered_map<std::string,
 
 void BinaryRW::write(const std::string& fileName, std::unordered_map<std::string, Section*>& sectionTable, std::unordered_map<std::string, Symbol*>& symbolTable) {
     file = std::fstream(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
-    
+
     writeUint32(symbolTable.size());
-    
+
     for(auto [symbolName, symbol] : symbolTable) {
         writeString(symbolName);
         writeString(symbol->section);
@@ -75,7 +75,7 @@ void BinaryRW::write(const std::string& fileName, std::unordered_map<std::string
         }
 
         writeUint32(section->data.size());
-        
+
         for(uchar byte : section->data) {
             writeByte(byte);
         }
@@ -93,7 +93,7 @@ void BinaryRW::writeUint32(uint32 num) {
 }
 
 void BinaryRW::writeString(std::string s) {
-    uint32 size = s.size(); 
+    uint32 size = s.size();
     writeUint32(size+1); // write the number of letters with '\0' sign
     std::vector<uchar> letters(size+1, 0);
     std::copy(s.begin(), s.end(), letters.begin());
@@ -140,7 +140,7 @@ void BinaryRW::writeHex(const std::string& fileName, std::unordered_map<std::str
         }
     }
     file.close();
-    
+
     // merge sections after maxSectionAddress into one file for readability
     // pickup sections after maxSectionAddress
     std::string maxSectionName;
@@ -157,7 +157,7 @@ void BinaryRW::writeHex(const std::string& fileName, std::unordered_map<std::str
     // starting from address closest to maxSectionAddress
     while(sectionsAfterMax.size() > 0) {
         uint32 currentAddress = maxSectionAddress + sectionTable[maxSectionName]->data.size();
-        
+
         for(auto& [addr, section] : sectionsAfterMax) {
             if(addr == currentAddress) {
                 sectionTable[maxSectionName]->data.insert(sectionTable[maxSectionName]->data.end(), section->data.begin(), section->data.end());
@@ -168,16 +168,16 @@ void BinaryRW::writeHex(const std::string& fileName, std::unordered_map<std::str
             }
         }
     }
-    
+
     // doesn't have to be in binary format, just for readability
     // doesn't even have to be connected to the binaryRW class
     file = std::fstream("program.txt", std::ios::out | std::ios::trunc);
     for(auto [sectionName, section] : sectionTable) {
         uint32 addr = section->addr;
-        
+
         // skip sections after maxSectionAddress
         if(addr > maxSectionAddress) continue;
-        
+
         for(uint32 i = 0; i < section->data.size(); i += 8) {
             file << std::hex << std::setw(8) << std::setfill('0') << addr + i << ": ";
             for(uint32 j = 0; j < 8 && (i + j) < section->data.size(); ++j) {
@@ -209,10 +209,10 @@ void BinaryRW::readHex(const std::string& fileName, std::unordered_map<uint32, s
             for(uint32 word = blockAddress & 0xfff; word < (1 << 12) && (block << 12 | word) < addr + size * sizeof(uchar); ++word) {
                 mem[block][word] = readByte();
             }
-            
+
             blockAddress += (1 << 12);
         }
     }
-    
+
     file.close();
 }

@@ -1,4 +1,4 @@
-#include "call.hpp"
+#include "./call.hpp"
 
 Instruction* CallInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 immediate, const std::string& label, int type) {
     return new CallInstruction(label, immediate, type);
@@ -11,12 +11,12 @@ Instruction* CallInstruction::binaryInstruction(int mod, int r1, int r2, int r3,
 int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::string, Symbol*>& symbolTable) {
     // call instruction received immediate through immediate and identifier through the label, check which one is it
     uint32 binary;
-    if(!label.empty()) { 
+    if(!label.empty()) {
         Symbol* symbol = nullptr;
         if(symbolTable.find(label) == symbolTable.end()) { // label not found -> put symbol in symbol table
             symbolTable[label] = symbol = new Symbol("UND", 0);
         }
-        
+
         if(!symbol && symbolTable[label]->defined && symbolTable[label]->section == section->name) { // already in symbol table, check if it is defined in the same section
             // check if offset is less than 12 signed bits
             if(section->data.size() - MAX_VAL <= symbolTable[label]->offset) { // pc relative can be performed
@@ -31,7 +31,7 @@ int CallInstruction::writeSectionData(Section* section, std::unordered_map<std::
         binary = serialize(JMP, 0, 15, 0, 0, 4);
         write_binary(section, binary);
         section->reloc_table[label].push_back(section->data.size());
-        write_binary(section, 0x0); // fill the memory for relocation with zeros 
+        write_binary(section, 0x0); // fill the memory for relocation with zeros
         return 12;
     }
     // if label is empty -> call immediate
@@ -56,10 +56,10 @@ void CallInstruction::execute(CPU* cpu) {
     cpu->setRegister(SP, sp - 4);
 
     uint32 address = cpu->getRegister(REGS(r1)) + cpu->getRegister(REGS(r2)) + disp;
-    
+
     if(mod == 1) {
         address = cpu->readMem(address);
     }
-    
+
     cpu->setRegister(PC, address);
 }

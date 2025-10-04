@@ -1,7 +1,7 @@
 #ifndef SHIFT_HPP
 #define SHIFT_HPP
 
-#include "instruction.hpp"
+#include "../instruction.hpp"
 
 class ShiftInstruction : public Instruction {
 public:

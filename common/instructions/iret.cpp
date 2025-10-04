@@ -1,5 +1,4 @@
-#include "iret.hpp"
-#include "load.hpp"
+#include "./iret.hpp"
 
 Instruction* IretInstruction::parsedInstruction(const std::string& instr, int reg1, int reg2, uint32 immediate, const std::string& label, int type) {
     return new IretInstruction();

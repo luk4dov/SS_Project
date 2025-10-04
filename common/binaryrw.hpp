@@ -1,7 +1,7 @@
 #ifndef BINARY_RW_HPP
 #define BINARY_RW_HPP
 
-#include "types.hpp"
+#include "./types.hpp"
 #include <fstream>
 
 class BinaryRW {

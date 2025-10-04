@@ -27,7 +27,7 @@
 
 %token EXTERN GLOBAL SECTION WORD END ASCII SKIP EQU
 %token LD ST PUSH POP XCHG
-%token ADD SUB MUL DIV 
+%token ADD SUB MUL DIV
 %token NOT AND OR XOR
 %token SHL SHR
 %token JMP BEQ BNE BGT CALL RET IRET HALT INT
@@ -46,8 +46,8 @@ input:
 
 |   input line
 
-line: 
-    directive NEWLINE 
+line:
+    directive NEWLINE
 |   label_definition NEWLINE
 |   instruction NEWLINE
 |   NEWLINE
@@ -126,7 +126,7 @@ instruction:
     }
 |   BEQ REGISTER COMMA REGISTER COMMA imm {
         selectInstruction("beq", $2, $4, $6, "", 0);
-    }   
+    }
 |   BEQ REGISTER COMMA REGISTER COMMA IDENTIFIER {
         selectInstruction("beq", $2, $4, 0, $6, 1);
     }
@@ -135,7 +135,7 @@ instruction:
     }
 |   BNE REGISTER COMMA REGISTER COMMA IDENTIFIER {
         selectInstruction("bne", $2, $4, 0, $6, 1);
-    }   
+    }
 |   BGT REGISTER COMMA REGISTER COMMA imm {
         selectInstruction("bgt", $2, $4, $6, "", 0);
     }
@@ -202,6 +202,9 @@ instruction:
 |   LD OBRACKET REGISTER PLUS imm CBRACKET COMMA REGISTER {
         selectInstruction("ld", $8, $3, $5, "", 6);
     }
+|   LD OBRACKET REGISTER PLUS IDENTIFIER CBRACKET COMMA REGISTER {
+        selectInstruction("ld", $8, $3, 0, $5, 7);
+    }
 |   ST REGISTER COMMA imm {
         selectInstruction("st", $2, 0, $4, "", 0);
     }
@@ -216,7 +219,7 @@ instruction:
     }
 |   CSRRD CSR COMMA REGISTER {
         selectInstruction("csrrd", $4, 0, 0, $2, 0);
-    }   
+    }
 |   CSRWR REGISTER COMMA CSR {
         selectInstruction("csrwr", $2, 0, 0, $4, 0);
     };

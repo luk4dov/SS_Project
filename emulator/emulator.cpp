@@ -1,4 +1,4 @@
-#include "emulator.hpp"
+#include "./emulator.hpp"
 
 Emulator::Emulator(const char* fileName) {
     memory = new Memory(fileName);

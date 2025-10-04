@@ -12,58 +12,65 @@ public:
     }
 };
 
+class SymbolNotLiteralNotIn12Bits : public std::exception {
+public:
+    SymbolNotLiteralNotIn12Bits(const std::string& symbol) {
+        std::cerr << "Error: symbol " << symbol << " is not in 12 bits.\n";
+    }
+};
+
 class LocalSymbolNotDefined  : public std::exception {
 public:
-    LocalSymbolNotDefined(std::string symbolName, std::string fileName) {
+    LocalSymbolNotDefined(const std::string& symbolName, const std::string& fileName) {
         std::cerr << "Error: " << fileName << ": " << "Local symbol " << symbolName << " not defined.\n";
     }
 };
 
 class SymbolRedefinition : public std::exception {
 public:
-    SymbolRedefinition(std::string symbolName, std::string fileName, int line) {
+    SymbolRedefinition(const std::string& symbolName, const std::string& fileName, int line) {
         std::cerr << "Error: " << fileName << ": line " << line << ": " << "Redefinition of symbol: " << symbolName << ".\n";
     }
 };
 
 class InitializationWithNonEquSymbol : public std::exception {
 public:
-    InitializationWithNonEquSymbol(std::string symbolName, std::string fileName, int line) {
+    InitializationWithNonEquSymbol(const std::string& symbolName, const std::string& fileName, int line) {
         std::cerr << "Error: " << fileName << ": line " << line << ": " << "Initialization of symbol: " << symbolName << " with non .equ symbol.\n";
     }
 };
 
 class CircularDependencyInEqu : public std::exception {
 public:
-    CircularDependencyInEqu(std::string fileName) {
+    CircularDependencyInEqu(const std::string& fileName) {
         std::cerr << "Error: " << fileName << ": " << "Circular dependency in .equ directives.\n";
     }
 };
 
 class SymbolMultipleDefinition : public std::exception {
 public:
-    SymbolMultipleDefinition(std::string symbolName) {
+    SymbolMultipleDefinition(const std::string& symbolName) {
         std::cerr << "Error: " << "Multiple definition of symbol: " << symbolName << ".\n";
     }
 };
 
 class SymbolNotDefined : public std::exception {
 public:
-    SymbolNotDefined(std::string symbolName) {
+    SymbolNotDefined(const std::string& symbolName) {
         std::cerr << "Error: symbol " << symbolName << " is not defined\n";
     }
 };
 
 class SectionNotFound : public std::exception {
 public:
-    SectionNotFound(std::string sectionName) {
+    SectionNotFound(const std::string& sectionName) {
         std::cerr << "Error: section " << sectionName << " not found in section table\n";
     }
 };
 
 class SectionOverlap : public std::exception {
 public:
-    SectionOverlap(std::string sectionName, std::string otherSectionName) {
+    SectionOverlap(const std::string& sectionName, const std::string& otherSectionName) {
         std::cerr << "Error: sections " << sectionName << " and " << otherSectionName << " overlap\n";
     }
 };

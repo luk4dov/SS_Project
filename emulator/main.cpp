@@ -7,12 +7,12 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: Invalid arguments\n";
         return -1;
     }
-    
+
     emulator = new Emulator(argv[1]);
 
     int ret = emulator->emulate();
 
     delete emulator;
-    
+
     return ret;
 }

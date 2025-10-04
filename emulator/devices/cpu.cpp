@@ -1,4 +1,4 @@
-#include "cpu.hpp"
+#include "./cpu.hpp"
 #include "../../common/instruction.hpp"
 
 CPU::CPU(Memory* memory) : halt(false), term_out(0xffffff00), term_in(0xffffff04), tim_cfg(0xffffff10), memory(memory) {
@@ -19,7 +19,7 @@ void CPU::reset() {
 }
 
 void CPU::executeInstruction() {
-    
+
     uint32 instruction = static_cast<uint32>(memory->read(registers[PC]));
     registers[PC] += 4;
 
@@ -41,17 +41,19 @@ void CPU::executeInstruction() {
     delete instr;
 }
 
-void CPU::interrupt(INT_CAUSE flag) { // push status; push pc; cause <= 4; status <= status & ~(0x1); pc <= handle
-    if(getCSR(CSRREG::HANDLER) == 0) return; // if no handler, ignore interrupt
+void CPU::interrupt(INT_CAUSE flag) {
+    if(csr[HANDLER] == 0) return; // if no handler, ignore interrupt
 
-    if(flag == INT_CAUSE::TIMER && getCSR(CSRREG::STATUS) & ((1 << INT_MASK::TIMER_STATUS) | (1 << INT_MASK::GLOBAL))) {
+    // check if interrupts are masked
+    if(flag == INT_CAUSE::TIMER && csr[STATUS] & ((1 << INT_MASK::GLOBAL) | (1 << INT_MASK::TIMER_STATUS))) {
         return;
     }
 
-    else if(flag == INT_CAUSE::TERMINAL && getCSR(CSRREG::STATUS) & ((1 << INT_MASK::TERMINAL_STATUS) | (1 << INT_MASK::GLOBAL))) {
+    else if(flag == INT_CAUSE::TERMINAL && csr[STATUS] & ((1 << INT_MASK::GLOBAL) | (1 << INT_MASK::TERMINAL_STATUS))) {
         return;
     }
 
+    // push status; push pc; cause <= 4; status <= status & ~(mask); pc <= handle
     uint32 status = csr[STATUS];
     uint32 sp = registers[SP];
     uint32 pc = registers[PC];
@@ -60,7 +62,7 @@ void CPU::interrupt(INT_CAUSE flag) { // push status; push pc; cause <= 4; statu
 
     registers[SP] = sp - 8;
     csr[CAUSE] = static_cast<uint32>(flag);
-    
+
     csr[STATUS] = status | (1 << INT_MASK::GLOBAL);
 
     uint32 handle = csr[HANDLER];

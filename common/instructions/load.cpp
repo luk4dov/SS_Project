@@ -1,4 +1,4 @@
-#include "load.hpp"
+#include "./load.hpp"
 
 LoadInstruction::LoadInstruction(int r1, int r2, uint32 immediate, const std::string& label, int type, LoadStoreOC op) :
             Instruction("load"), r1(r1), r2(r2), immediate(immediate), label(label), type(type), op(op) {};
@@ -27,7 +27,7 @@ Instruction* LoadInstruction::parsedInstruction(const std::string& instr, int r1
 
         if(instr == "csrrd")
             return new LoadInstruction(r1, r2, 0, instr, 0, LoadStoreOC::REGULAR);
-        else 
+        else
             return new LoadInstruction(r2, r1, 0, instr, 0, LoadStoreOC::CSR);
     }
     return new LoadInstruction(r1, r2, immediate, label, type, LoadStoreOC::REGULAR);
@@ -65,7 +65,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             write_binary(section, immediate);
             return 12;
         }
-        case 1: { // LD $sym, reg -> reg <= sym   
+        case 1: { // LD $sym, reg -> reg <= sym
             if(symbolTable.find(label) == symbolTable.end()) {
                 symbolTable[label] = new Symbol("UND", 0);
             }
@@ -80,7 +80,7 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             write_binary(section, binary);
             section->reloc_table[label].push_back(section->data.size());
             write_binary(section, 0x0);
-            return 12; 
+            return 12;
         }
         case 2: { // LD imm, reg -> reg <= mem[imm]
             if(immediate < MAX_VAL) {
@@ -136,6 +136,15 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             write_binary(section, binary);
             return 4;
         }
+        case 7: { // LD [%reg+sym], reg-> mem[%reg + sym], only if value of symbol is known during assembly and if it fits in 12b
+            if(!symbolTable[label] || !symbolTable[label]->defined || symbolTable[label]->section!="ABS" || symbolTable[label]->offset >= MAX_VAL) {
+                throw SymbolNotLiteralNotIn12Bits(label);
+            }
+
+            uint32 binary = serialize(LOAD, 0x2, r1, r2, 0, symbolTable[label]->offset);
+            write_binary(section, binary);
+            return 4;
+        }
     }
     return 0;
 }
@@ -148,7 +157,7 @@ void LoadInstruction::execute(CPU* cpu) {
                 cpu->setRegister(REGS(r1), val);
             } else {
                 int val = cpu->getRegister(REGS(r2)) + cpu->getRegister(REGS(r3)) + disp;
-                if(mod == 2) { // r1 <= mem[val] 
+                if(mod == 2) { // r1 <= mem[val]
                     val = cpu->readMem((uint32)val);
                 }
                 cpu->setRegister(REGS(r1), val);
@@ -171,7 +180,7 @@ void LoadInstruction::execute(CPU* cpu) {
                 if (mod == 7) { // pop csr
                     cpu->setRegister(REGS(r2), val);
                 }
-                if(mod == 6) { // r1 <= mem[val] 
+                if(mod == 6) { // r1 <= mem[val]
                     val = cpu->readMem((uint32)val);
                 }
                 cpu->setCSR(CSRREG(r1), val);

@@ -1,7 +1,7 @@
-#include "timer.hpp"
+#include "./timer.hpp"
 
 void Timer::tick() {
-    
+
     auto now = std::chrono::system_clock::now();
     uint32 elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick).count();
 

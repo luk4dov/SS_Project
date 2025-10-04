@@ -1,4 +1,5 @@
 #include "linker.hpp"
+#include "../common/exceptions.hpp"
 
 Linker::~Linker() {
     for(auto& [sectionName, section] : sectionTable) {
@@ -18,10 +19,10 @@ int Linker::link() {
 
         std::unordered_map<std::string, uint32> sectionSize = {};
 
-        // merge sections and symbols from temp tables into main table      
+        // merge sections and symbols from temp tables into main table
         for(auto& [tempSectionName, tempSection] : tempSectionTable) {
             if (sectionTable.find(tempSectionName) == sectionTable.end()) { // insert it as new section
-                sectionTable[tempSectionName] = tempSection; 
+                sectionTable[tempSectionName] = tempSection;
                 continue;
             }
 
@@ -36,11 +37,11 @@ int Linker::link() {
                 }
                 if(symbolName[0] == '.') { // increase addend of local symbols in temp section table
                     for(auto offset : offsets) {
-                        uint32 addend = (tempSection->data[offset] & 0xff) | 
-                                 ((tempSection->data[offset+1] & 0xff) << 8) | 
-                                 ((tempSection->data[offset+2] & 0xff) << 16) | 
+                        uint32 addend = (tempSection->data[offset] & 0xff) |
+                                 ((tempSection->data[offset+1] & 0xff) << 8) |
+                                 ((tempSection->data[offset+2] & 0xff) << 16) |
                                  ((tempSection->data[offset+3] & 0xff) << 24);
-                        
+
                         addend += sectionTable[tempSectionName]->data.size();
 
                         tempSection->data[offset] = (addend) & 0xff;
@@ -51,7 +52,7 @@ int Linker::link() {
                 }
             }
 
-            // copy data from temp section the section that already exists
+            // copy data from temp section to the main section
             sectionTable[tempSectionName]->data.insert(sectionTable[tempSectionName]->data.end(), tempSection->data.begin(), tempSection->data.end());
         }
 
@@ -59,7 +60,7 @@ int Linker::link() {
             if (symbolTable.find(tempSymbolName) == symbolTable.end()) { // insert it as new symbol
                 symbolTable[tempSymbolName] = tempSymbol;
                 symbolTable[tempSymbolName]->offset += sectionSize[tempSymbol->section]; // adjust offset to the new section
-                
+
                 continue;
             }
             // symbol with that name already exists, check if it's defined or not
@@ -121,7 +122,7 @@ int Linker::createExecutable(std::string outputFile) {
         if(sectionAddress.find(sectionName) != sectionAddress.end()) { // it's placed by -place option
             continue;
         }
-        
+
         section->addr = currentAddress;
         currentAddress += section->data.size();
     }
@@ -130,18 +131,18 @@ int Linker::createExecutable(std::string outputFile) {
     for(const auto& [sectionName, section] : sectionTable) {
         for(const auto& [symbolName, offsets] : section->reloc_table) {
             Symbol* symbol = symbolTable[symbolName];
-            
+
             uint32 symbolAddress = symbol->offset;
             if(symbol->section != "ABS") {
                 symbolAddress += sectionTable[symbol->section]->addr;
             }
 
             for(uint32 offset : offsets) {
-                uint32 addend = (section->data[offset] & 0xff) | 
-                                 ((section->data[offset+1] & 0xff) << 8) | 
-                                 ((section->data[offset+2] & 0xff) << 16) | 
+                uint32 addend = (section->data[offset] & 0xff) |
+                                 ((section->data[offset+1] & 0xff) << 8) |
+                                 ((section->data[offset+2] & 0xff) << 16) |
                                  ((section->data[offset+3] & 0xff) << 24);
-                
+
                 section->data[offset] = (symbolAddress + addend) & 0xff;
                 section->data[offset+1] = ((symbolAddress + addend) >> 8) & 0xff;
                 section->data[offset+2] = ((symbolAddress + addend) >> 16) & 0xff;
@@ -151,7 +152,7 @@ int Linker::createExecutable(std::string outputFile) {
     }
     // write to binary file
     rw->writeHex(outputFile, sectionTable, maxSectionAddress);
-    
+
     return 0;
 }
 
@@ -185,10 +186,10 @@ void Linker::printStat() {
         }
     }
     std::cout << "------------------------------------------------------\n";
-    
+
     std::cout << "Section table: name  |  addr  |  size \n";
     for(auto [sectionName, section] : sectionTable) {
-        std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n'; 
+        std::cout << sectionName << " | " << std::hex << section->addr << " | " << section->data.size() << '\n';
     }
     std::cout << "------------------------------------------------------\n";
 

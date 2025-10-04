@@ -1,15 +1,15 @@
-#include "instruction.hpp"
-#include "instructions/halt.hpp"
-#include "instructions/int.hpp"
-#include "instructions/iret.hpp"
-#include "instructions/call.hpp"
-#include "instructions/jmp.hpp"
-#include "instructions/xchg.hpp"
-#include "instructions/load.hpp"
-#include "instructions/store.hpp"
-#include "instructions/arith.hpp"
-#include "instructions/logic.hpp"
-#include "instructions/shift.hpp"
+#include "./instruction.hpp"
+#include "./instructions/halt.hpp"
+#include "./instructions/int.hpp"
+#include "./instructions/iret.hpp"
+#include "./instructions/call.hpp"
+#include "./instructions/jmp.hpp"
+#include "./instructions/xchg.hpp"
+#include "./instructions/load.hpp"
+#include "./instructions/store.hpp"
+#include "./instructions/arith.hpp"
+#include "./instructions/logic.hpp"
+#include "./instructions/shift.hpp"
 
 using InstructionFormat = Instruction* (*) (const std::string&, int, int, uint32, const std::string&, int);
 
@@ -56,17 +56,13 @@ std::unordered_map<OperationCode, Instruction* (*) (int,int,int,int,int)> Instru
 };
 
 uint32 Instruction::serialize(OperationCode op, short mn, short ra, short rb, short rc, short disp) {
-    return (((op & 0xf) << 28) | 
-            ((mn & 0xf) << 24) | 
-            ((ra & 0xf) << 20) | 
-            ((rb & 0xf) << 16) | 
-            ((rc & 0xf) << 12) | 
+    return (((op & 0xf) << 28) |
+            ((mn & 0xf) << 24) |
+            ((ra & 0xf) << 20) |
+            ((rb & 0xf) << 16) |
+            ((rc & 0xf) << 12) |
             (disp & 0xfff));
-    // return (disp & 0xfff) << 20 | (rc & 0xf) << 16 | (rb & 0xf) << 12 | (ra & 0xf) << 8 | (mn & 0xf) << 4 | (op & 0xf);
-    
 }
-
-
 
 void Instruction::write_binary(Section* section, uint32 binary_data) {
     section->data.push_back(binary_data & 0xff);

@@ -1,4 +1,4 @@
-#include "arith.hpp"
+#include "./arith.hpp"
 
 
 Instruction* ArithInstruction::parsedInstruction(const std::string& instr, int r1, int r2, uint32 imm, const std::string& label, int type) {

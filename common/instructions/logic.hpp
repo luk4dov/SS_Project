@@ -1,7 +1,7 @@
 #ifndef LOGIC_HPP
 #define LOGIC_HPP
 
-#include "instruction.hpp"
+#include "../instruction.hpp"
 
 class LogicInstruction : public Instruction {
 public:

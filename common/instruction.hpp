@@ -6,7 +6,7 @@
 #include "../emulator/devices/cpu.hpp"
 
 class Instruction {
-public:    
+public:
 
     Instruction(std::string mn) : mn(mn) {}
     virtual ~Instruction() {};

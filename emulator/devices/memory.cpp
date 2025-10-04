@@ -1,4 +1,4 @@
-#include "memory.hpp"
+#include "./memory.hpp"
 
 Memory::Memory(const char* fileName) {
     rw = new BinaryRW();
@@ -14,7 +14,7 @@ int Memory::read(uint32 address) {
         mem[block] = std::vector<uchar>(1 << 12, 0);
         return 0;
     }
-    
+
     return static_cast<int>(mem[block][word] | (mem[block][word + 1] << 8) | (mem[block][word + 2] << 16) | (mem[block][word + 3] << 24));
 }
 
@@ -25,7 +25,7 @@ void Memory::write(uint32 address, int value) {
     if(mem.find(block) == mem.end()) {
         mem[block] = std::vector<uchar>(1 << 12, 0);
     }
-    
+
     // little endian
     mem[block][word] = value & 0xff;
     mem[block][word + 1] = (value >> 8) & 0xff;
