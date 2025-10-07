@@ -1,7 +1,6 @@
-test*
-*.sh
 *.txt
 *.json
 build/*
 *_exec
 *.o
+*.hex

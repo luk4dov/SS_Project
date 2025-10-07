@@ -7,7 +7,7 @@
 class Assembler {
 public:
     Assembler(const char* inputFile, const char* outputFile) : inputFile(inputFile), outputFile(outputFile), section("") {
-        sectionTable = {}; symbolTable = {}; rw = new BinaryRW(); unresolvedEqus = {}; // literalPool = {};
+        sectionTable = {}; symbolTable = {}; rw = new BinaryRW(); unresolvedEqus = {}; pushRegList = {};
     }
 
     ~Assembler();
@@ -19,6 +19,12 @@ public:
     void labelDefinition(const std::string&);
     void selectDirective(const std::string&, const std::string&, uint32);
     void equDirective(uint32, const std::string&, const std::string&, const std::string&, uint32, uint32, uint32);
+
+    
+    void pushRegs();
+    void addRegToList(int reg) {
+        pushRegList.push_back(reg);
+    }
 
 private:
     BinaryRW* rw;
@@ -33,6 +39,8 @@ private:
     std::queue<EquExpression*> unresolvedEqus;
     void resolveEqus();
     int tryToResolve(EquExpression*);
+
+    std::vector<int> pushRegList;
 
     void removeLocalSymbols();
     void printStat();

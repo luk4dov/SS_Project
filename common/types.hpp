@@ -31,13 +31,15 @@ enum {
 
 class Symbol {
 public:
-    Symbol(const std::string& section, uint32 offset, bool global = false, bool defined = false) : section(section), offset(offset), global(global), defined(defined) {}
+    Symbol(const std::string& section, uint32 offset, bool global = false, bool defined = false) : section(section), offset(offset), global(global), defined(defined), weak(false) {}
     ~Symbol() = default;
 
     std::string section;
     uint32 offset;
     bool global;
     bool defined;
+    bool weak;
+
 };
 
 class Section {

@@ -27,6 +27,7 @@ ALPHANUM    [a-zA-Z0-9_]
 \.end               { return END;     }
 \.ascii             { return ASCII;   }
 \.equ               { return EQU;     }
+\.weak              { return WEAK;    }
 
 halt                { return HALT;  } 
 int                 { return INT;   } 
@@ -94,6 +95,10 @@ csrwr               { return CSRWR; }
 \]      { return CBRACKET; }
 \+      { return PLUS; }
 \-      { return MINUS; }
+
+\{      { return '{'; }
+\}      { return '}'; }
+
 
 ,       {  return COMMA;  }
 :       {  return COLON;  }

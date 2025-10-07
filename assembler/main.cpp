@@ -18,6 +18,12 @@ void equDirective(uint32 type, const char* sym, const char* op1, const char* op2
     assembler->equDirective(type, std::string(sym), std::string(op1), std::string(op2), u_op1, u_op2, op);
 }
 
+void AddRegToList(int reg) {
+    assembler->addRegToList(reg);
+}
+void pushRegs() {
+    assembler->pushRegs();
+}
 
 int main(int argc, char* argv[]) {
     if(argc < 2 || argc > 4 || argc == 3) {

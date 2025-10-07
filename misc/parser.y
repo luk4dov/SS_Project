@@ -13,6 +13,9 @@
     extern void labelDefinition(const char*);
     extern void equDirective(uint32, const char*, const char*, const char*, uint32, uint32, uint32);
 
+    extern void AddRegToList(int);
+    extern void pushRegs();
+
 %}
 
 %union {
@@ -25,14 +28,14 @@
 %token <regn> REGISTER
 %token <str> IDENTIFIER CSR SYMBOL_REF STRING_LITERAL
 
-%token EXTERN GLOBAL SECTION WORD END ASCII SKIP EQU
+%token EXTERN GLOBAL SECTION WORD END ASCII SKIP EQU WEAK
 %token LD ST PUSH POP XCHG
 %token ADD SUB MUL DIV
 %token NOT AND OR XOR
 %token SHL SHR
 %token JMP BEQ BNE BGT CALL RET IRET HALT INT
 %token CSRRD CSRWR
-%token OBRACKET CBRACKET PLUS MINUS
+%token OBRACKET CBRACKET PLUS MINUS COBRACKET CCBRACKET
 %token COMMA COLON NEWLINE DOLLAR QUOTE
 
 %type <num> imm
@@ -60,6 +63,7 @@ directive:
 |   WORD word_identifier_list
 |   SKIP NUMBER { selectDirective("skip", "", $2); }
 |   ASCII string { selectDirective("ascii", $2, 0); }
+|   WEAK IDENTIFIER { selectDirective("weak", $2, 0); }
 |   EQU IDENTIFIER COMMA NUMBER { equDirective(0, $2, "", "", $4, -1, 0); }
 |   EQU IDENTIFIER COMMA NUMBER PLUS NUMBER { equDirective(1, $2, "", "", $4, $6, 1); }
 |   EQU IDENTIFIER COMMA NUMBER MINUS NUMBER { equDirective(1, $2, "", "", $4, $6, 2); }
@@ -205,6 +209,9 @@ instruction:
 |   LD OBRACKET REGISTER PLUS IDENTIFIER CBRACKET COMMA REGISTER {
         selectInstruction("ld", $8, $3, 0, $5, 7);
     }
+|   LD OBRACKET REGISTER PLUS REGISTER CBRACKET COMMA REGISTER {
+        selectInstruction("ld", $8, $3, $5, "", 8);
+    }
 |   ST REGISTER COMMA imm {
         selectInstruction("st", $2, 0, $4, "", 0);
     }
@@ -222,8 +229,15 @@ instruction:
     }
 |   CSRWR REGISTER COMMA CSR {
         selectInstruction("csrwr", $2, 0, 0, $4, 0);
-    };
+    }
+|   PUSH '{' push_regs_list '}' {
+        pushRegs();
+    }
+;
 
+push_regs_list:
+    REGISTER { AddRegToList($1); }
+|   push_regs_list COMMA REGISTER { AddRegToList($3); }
 %%
 
 int yyerror(const char* s) {

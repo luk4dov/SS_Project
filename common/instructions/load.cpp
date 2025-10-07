@@ -145,6 +145,11 @@ int LoadInstruction::writeSectionData(Section* section, std::unordered_map<std::
             write_binary(section, binary);
             return 4;
         }
+        case 8: { // LD[%reg + %reg], reg -> reg <= mem[%reg + %reg]
+            uint32 binary = serialize(LOAD, 0x2, r1, r2, immediate, 0); // here, r3 value is in var immediate 
+            write_binary(section, binary);
+            return 4;
+        }
     }
     return 0;
 }

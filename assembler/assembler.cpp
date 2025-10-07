@@ -1,6 +1,7 @@
 #include "assembler.hpp"
 #include "../common/exceptions.hpp"
 #include "../common/instruction.hpp"
+#include <algorithm>
 
 extern int yyparse();
 extern int yylineno;
@@ -17,24 +18,23 @@ Assembler::~Assembler() {
 
 void Assembler::removeLocalSymbols() {
     std::vector<std::string> localSymbols;
-    for(const auto& [symbolName, symbol] : symbolTable) {                               // check for every symbol
-        if(symbol->global) continue;                                                    // if symbol is global there is no need to do anything
-        if(!symbol->defined) {                                                          // error, local symbol that's not defined
+    for(const auto& [symbolName, symbol] : symbolTable) {
+        if(symbol->global) continue;
+        if(!symbol->defined) {
             throw LocalSymbolNotDefined(symbolName, std::string(inputFile));
         }
 
         localSymbols.push_back(symbolName);
 
-        // symbol is local and defined, so we have to redirect relocation to symbol's section, and symbol's offset load to relocation address
         for(const auto& [sectionName, section] : sectionTable) {
-            for(uint32 offset : section->reloc_table[symbolName]) {                     // for every relocation of symbol in this section
+            for(uint32 offset : section->reloc_table[symbolName]) {
                 Symbol* sym = symbolTable[symbolName];
 
                 if(symbol->section != "ABS") {
                     section->reloc_table["." + sym->section].push_back(offset);
                 }
-                // section->reloc_table["." + sym->section].push_back(offset);             // create new relocation but over symbol's section
-                section->data[offset] = symbol->offset & 0xff;                          // load symbol's offset from it's section to memory; little endian
+                
+                section->data[offset] = symbol->offset & 0xff;
                 section->data[offset+1] = (symbol->offset >> 8) & 0xff;
                 section->data[offset+2] = (symbol->offset >> 16) & 0xff;
                 section->data[offset+3] = (symbol->offset >> 24) & 0xff;
@@ -42,7 +42,7 @@ void Assembler::removeLocalSymbols() {
         }
     }
 
-    for(const std::string& symbolName : localSymbols) { // remove entries in relocation tables for local symbols
+    for(const std::string& symbolName : localSymbols) {
         for(const auto& [sectionName, section] : sectionTable) {
             section->reloc_table.erase(symbolName);
         }
@@ -121,7 +121,13 @@ void Assembler::selectDirective(const std::string& directive, const std::string&
             sectionTable[section]->data.push_back(c);
         }
         sectionTable[section]->data.push_back('\0');
-
+    
+    } else if(directive == "weak") {
+        if(symbolTable.find(name) == symbolTable.end()) {
+            symbolTable[name] = new Symbol("UND", 0, true, false); 
+        }
+        symbolTable[name]->global = true;
+        symbolTable[name]->weak = true;
     }
 }
 
@@ -346,6 +352,16 @@ int Assembler::tryToResolve(EquExpression* expr) {
     }
 
     return 0;
+}
+
+void Assembler::pushRegs() {
+    std::sort(pushRegList.begin(), pushRegList.end());
+
+    for(int reg : pushRegList) {
+        selectInstruction("push", reg, 0, 0, "", 0);   
+    }
+    
+    pushRegList.clear();
 }
 
 

@@ -11,7 +11,9 @@ void BinaryRW::read(const std::string& fileName, std::unordered_map<std::string,
         uint32 offset = readUint32();
         bool global = readByte();
         bool defined = readByte();
+        bool weak = readByte();
         symbolTable[symbolName] = new Symbol(section, offset, global, defined);
+        symbolTable[symbolName]->weak = weak;
     }
 
     uint32 sectionTableSize = readUint32();
@@ -59,6 +61,7 @@ void BinaryRW::write(const std::string& fileName, std::unordered_map<std::string
         writeUint32(symbol->offset);
         writeByte(static_cast<uchar>(symbol->global));
         writeByte(static_cast<uchar>(symbol->defined));
+        writeByte(static_cast<uchar>(symbol->weak));
     }
 
     writeUint32(sectionTable.size());

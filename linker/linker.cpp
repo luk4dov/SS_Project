@@ -66,14 +66,31 @@ int Linker::link() {
             // symbol with that name already exists, check if it's defined or not
             // if it's defined, continue
             // if it's not defined, check if the tempSymbol is defined, if it is, then update the symbol in the main table
-            if(symbolTable[tempSymbolName]->defined && tempSymbolName[0] != '.') {
-                if(tempSymbol->defined) {  // two global symbols with the same name and both defined, error
-                    throw SymbolMultipleDefinition(tempSymbolName);
+            if(tempSymbolName[0] == '.') continue;
+
+            if(tempSymbol->weak) { delete tempSymbol; continue; }
+
+            if(!symbolTable[tempSymbolName]->weak) {
+                if (tempSymbol->weak) {
+                    delete tempSymbol;
+                    continue;
                 }
-            } else if(tempSymbol->defined && tempSymbolName[0] != '.') { // we found definition of symbol, update symbol table (don't want to move .{section_name} symbols)
+            } else if(!tempSymbol->weak) {
                 Symbol* old = symbolTable[tempSymbolName];
                 symbolTable[tempSymbolName] = tempSymbol;
-                symbolTable[tempSymbolName]->offset += sectionTable[tempSymbol->section]->data.size() - tempSectionTable[tempSymbol->section]->data.size(); // adjust offset to the new section
+                symbolTable[tempSymbolName]->offset += sectionTable[tempSymbol->section]->data.size() - tempSectionTable[tempSymbol->section]->data.size();
+                delete old;
+                continue;
+            }
+            
+            if(symbolTable[tempSymbolName]->defined) {
+                if(tempSymbol->defined) {
+                    throw SymbolMultipleDefinition(tempSymbolName);
+                }
+            } else if(tempSymbol->defined) {
+                Symbol* old = symbolTable[tempSymbolName];
+                symbolTable[tempSymbolName] = tempSymbol;
+                symbolTable[tempSymbolName]->offset += sectionTable[tempSymbol->section]->data.size() - tempSectionTable[tempSymbol->section]->data.size();
                 delete old;
             }
         }
